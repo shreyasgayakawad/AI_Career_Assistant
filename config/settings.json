@@ -1,0 +1,23 @@
+{
+  "search": {
+    "keywords": [
+      "Application Support Engineer",
+      "Product Support Engineer",
+      "Production Support Engineer",
+      "Technical Support Engineer",
+      "L2 Support Engineer",
+      "Blue Yonder",
+      "Oracle SQL"
+    ],
+    "locations": [
+      "Remote",
+      "Bangalore",
+      "Pune"
+    ],
+    "experience": {
+      "minimum": 3,
+      "maximum": 6
+    },
+    "minimum_ai_score": 85
+  }
+}

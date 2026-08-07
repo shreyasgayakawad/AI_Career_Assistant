@@ -4,7 +4,6 @@ Test Company Repository
 Simple integration script for the CompanyRepository.
 """
 
-# IMPORTANT:
 # Import all models so SQLAlchemy registers every mapper.
 import app.models  # noqa: F401
 
@@ -23,15 +22,19 @@ def main() -> None:
     try:
         repository = CompanyRepository(session)
 
-        company = Company(
-            name="Google",
-            website="https://google.com",
-            careers_url="https://careers.google.com",
-        )
+        company = repository.get_by_name("Google")
 
-        company = repository.create(company)
+        if company is None:
+            company = Company(
+                name="Google",
+                website="https://google.com",
+                careers_url="https://careers.google.com",
+            )
 
-        print(f"Created Company ID: {company.id}")
+            company = repository.create(company)
+            print(f"Created Company ID: {company.id}")
+        else:
+            print(f"Company already exists. ID: {company.id}")
 
         loaded_company = repository.get_by_id(company.id)
 

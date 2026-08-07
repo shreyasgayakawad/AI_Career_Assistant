@@ -4,6 +4,8 @@ Greenhouse Connector
 Fetches jobs from the Greenhouse Job Board API.
 """
 
+from datetime import datetime
+
 from app.connectors.base_connector import BaseConnector
 from app.dto.scraped_job import ScrapedJob
 
@@ -42,6 +44,17 @@ class GreenhouseConnector(BaseConnector):
 
         for item in data.get("jobs", []):
 
+            posted_date = None
+
+            first_published = item.get("first_published")
+            if first_published:
+                try:
+                    posted_date = datetime.fromisoformat(
+                        first_published.replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    posted_date = None
+
             jobs.append(
                 ScrapedJob(
                     company=item.get("company_name", ""),
@@ -49,6 +62,8 @@ class GreenhouseConnector(BaseConnector):
                     location=item.get("location", {}).get("name", ""),
                     url=item.get("absolute_url", ""),
                     description=item.get("content", ""),
+                    external_job_id=str(item.get("id")),
+                    posted_date=posted_date,
                 )
             )
 

@@ -19,14 +19,17 @@ class JobPostingRepository(BaseRepository[JobPosting]):
     def __init__(self, session: Session):
         super().__init__(JobPosting, session)
 
-    def get_by_url(self, url: str) -> JobPosting | None:
+    def get_by_url(
+        self,
+        url: str,
+    ) -> JobPosting | None:
         """
-        Retrieve a job posting by its URL.
+        Retrieve a job posting by its posting URL.
         """
 
         statement = (
             select(JobPosting)
-            .where(JobPosting.url == url)
+            .where(JobPosting.posting_url == url)
         )
 
         return self.session.scalar(statement)

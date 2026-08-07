@@ -14,7 +14,7 @@ from app.services.job_import_service import JobImportService
 
 def main() -> None:
     """
-    Test JobImportService business methods.
+    Test importing a single scraped job.
     """
 
     session = SessionLocal()
@@ -30,20 +30,23 @@ def main() -> None:
             description="Test Job",
         )
 
-        company = service.get_or_create_company(scraped_job.company)
-        source = service.get_source("Greenhouse")
+        posting = service.import_job(
+            scraped_job=scraped_job,
+            source_name="Greenhouse",
+        )
 
         print("=" * 50)
         print("Job Import Service Test")
         print("=" * 50)
 
-        print(f"Company ID   : {company.id}")
-        print(f"Company Name : {company.name}")
-
-        print()
-
-        print(f"Source ID    : {source.id}")
-        print(f"Source Name  : {source.name}")
+        if posting is None:
+            print("Job posting already exists.")
+        else:
+            print(f"Posting ID      : {posting.id}")
+            print(f"Company         : {posting.job.company.name}")
+            print(f"Job             : {posting.job.title}")
+            print(f"Source          : {posting.source.name}")
+            print(f"Posting URL     : {posting.posting_url}")
 
     finally:
         session.close()

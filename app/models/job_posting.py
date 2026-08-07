@@ -85,9 +85,9 @@ class JobPosting(BaseModel):
     )
 
     job: Mapped["Job"] = relationship(
-    	back_populates="postings",
+        back_populates="postings",
     )
 
     source: Mapped["Source"] = relationship(
-    	back_populates="postings",
+        back_populates="postings",
     )

@@ -5,6 +5,7 @@ Represents a job collected from any job source.
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass(slots=True)
@@ -18,4 +19,8 @@ class ScrapedJob:
     title: str
     location: str
     url: str
+
     description: str | None = None
+    external_job_id: str | None = None
+    salary: str | None = None
+    posted_date: datetime | None = None

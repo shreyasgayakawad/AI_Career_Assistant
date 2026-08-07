@@ -1,21 +1,17 @@
-from database.job_service import JobService
+"""
+AI Career Assistant
+
+Application Entry Point
+"""
 
 
-def main():
-    service = JobService()
-
-    jobs = service.get_all_jobs()
+def main() -> None:
+    """Application entry point."""
 
     print("=" * 50)
-    print("AI Job Bot")
+    print("AI Career Assistant")
     print("=" * 50)
-
-    print(f"\nFound {len(jobs)} jobs\n")
-
-    for job in jobs:
-        print(f"{job.company} | {job.title} | {job.location}")
-
-    service.close()
+    print("Application started successfully.")
 
 
 if __name__ == "__main__":

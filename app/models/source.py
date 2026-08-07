@@ -12,7 +12,7 @@ Examples:
 """
 
 from sqlalchemy import Boolean, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base_model import BaseModel
 
@@ -44,4 +44,9 @@ class Source(BaseModel):
         Boolean,
         default=True,
         nullable=False,
+    )
+
+    postings: Mapped[list["JobPosting"]] = relationship(
+    	back_populates="source",
+    	cascade="all, delete-orphan",
     )

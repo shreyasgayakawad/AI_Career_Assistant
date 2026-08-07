@@ -8,6 +8,9 @@ from app.database.base import Base
 from app.database.engine import engine
 
 # Import all models here so SQLAlchemy registers them.
+from app.models.company import Company  # noqa: F401
+from app.models.job import Job  # noqa: F401
+from app.models.job_posting import JobPosting  # noqa: F401
 from app.models.source import Source  # noqa: F401
 
 

@@ -4,7 +4,7 @@ Job Repository
 Repository for Job database operations.
 """
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models.company import Company
@@ -38,3 +38,55 @@ class JobRepository(BaseRepository[Job]):
         )
 
         return self.session.scalar(statement)
+
+    def get_by_company(
+        self,
+        company: Company,
+    ) -> list[Job]:
+        """
+        Retrieve all jobs for a company.
+        """
+
+        statement = (
+            select(Job)
+            .where(Job.company_id == company.id)
+            .order_by(Job.title)
+        )
+
+        return list(self.session.scalars(statement).all())
+
+    def search(
+        self,
+        keyword: str,
+    ) -> list[Job]:
+        """
+        Search jobs by title or description.
+        """
+
+        pattern = f"%{keyword}%"
+
+        statement = (
+            select(Job)
+            .where(
+                or_(
+                    Job.title.ilike(pattern),
+                    Job.description.ilike(pattern),
+                )
+            )
+            .order_by(Job.title)
+        )
+
+        return list(self.session.scalars(statement).all())
+
+    def get_active_jobs(self) -> list[Job]:
+        """
+        Retrieve all active jobs.
+        """
+
+        statement = (
+            select(Job)
+            .where(Job.active.is_(True))
+            .order_by(Job.title)
+        )
+
+        return list(self.session.scalars(statement).all())

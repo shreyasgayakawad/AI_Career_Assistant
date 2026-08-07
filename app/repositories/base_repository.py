@@ -6,6 +6,7 @@ Provides common CRUD operations for all repositories.
 
 from typing import Generic, Type, TypeVar
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.base_model import BaseModel
@@ -39,3 +40,12 @@ class BaseRepository(Generic[T]):
         """
 
         return self.session.get(self.model, entity_id)
+
+    def get_all(self) -> list[T]:
+        """
+        Retrieve all entities.
+        """
+
+        statement = select(self.model)
+
+        return list(self.session.scalars(statement).all())

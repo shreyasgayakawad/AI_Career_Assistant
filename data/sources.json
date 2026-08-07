@@ -1,0 +1,44 @@
+[
+    {
+        "name": "LinkedIn",
+        "base_url": "https://www.linkedin.com/jobs",
+        "scraper_name": "linkedin_scraper",
+        "enabled": true
+    },
+    {
+        "name": "Wellfound",
+        "base_url": "https://wellfound.com/jobs",
+        "scraper_name": "wellfound_scraper",
+        "enabled": true
+    },
+    {
+        "name": "Greenhouse",
+        "base_url": "https://boards.greenhouse.io",
+        "scraper_name": "greenhouse_scraper",
+        "enabled": true
+    },
+    {
+        "name": "Lever",
+        "base_url": "https://jobs.lever.co",
+        "scraper_name": "lever_scraper",
+        "enabled": true
+    },
+    {
+        "name": "Ashby",
+        "base_url": "https://jobs.ashbyhq.com",
+        "scraper_name": "ashby_scraper",
+        "enabled": true
+    },
+    {
+        "name": "Workday",
+        "base_url": "https://workday.com",
+        "scraper_name": "workday_scraper",
+        "enabled": true
+    },
+    {
+        "name": "SmartRecruiters",
+        "base_url": "https://www.smartrecruiters.com",
+        "scraper_name": "smartrecruiters_scraper",
+        "enabled": true
+    }
+]

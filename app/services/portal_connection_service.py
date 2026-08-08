@@ -6,6 +6,7 @@ Provides business logic for managing user portal connections.
 
 from sqlalchemy.orm import Session
 
+from app.config.platforms import JobPlatform
 from app.models.portal_connection import PortalConnection
 from app.repositories.portal_connection_repository import (
     PortalConnectionRepository,
@@ -31,6 +32,8 @@ class PortalConnectionService:
         Retrieve a user's connection for a platform.
         """
 
+        self._validate_platform(platform)
+
         return (
             self.portal_connection_repository
             .get_by_user_and_platform(
@@ -49,9 +52,11 @@ class PortalConnectionService:
         """
         Create a portal connection for a user.
 
-        Raises ValueError if the user already has
-        a connection for the platform.
+        Raises ValueError if the platform is unsupported
+        or the user already has a connection for it.
         """
+
+        self._validate_platform(platform)
 
         existing_connection = (
             self.portal_connection_repository
@@ -93,3 +98,19 @@ class PortalConnectionService:
                 user_id=user_id,
             )
         )
+
+    @staticmethod
+    def _validate_platform(platform: str) -> None:
+        """
+        Validate that the requested platform is supported.
+        """
+
+        supported_platforms = {
+            supported_platform.value
+            for supported_platform in JobPlatform
+        }
+
+        if platform not in supported_platforms:
+            raise ValueError(
+                f"Unsupported job platform: {platform}."
+            )

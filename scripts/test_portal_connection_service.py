@@ -7,7 +7,6 @@ Tests business logic for user portal connections.
 import app.models  # noqa: F401
 
 from app.database.session import SessionLocal
-from app.models.portal_connection import PortalConnection
 from app.models.user import User
 from app.services.portal_connection_service import (
     PortalConnectionService,
@@ -153,7 +152,7 @@ def main() -> None:
         )
 
         # ---------------------------------------------------------
-        # Different platform is allowed.
+        # Different supported platforms are allowed.
         # ---------------------------------------------------------
 
         naukri_connection = service.create_connection(
@@ -162,13 +161,53 @@ def main() -> None:
             login_email=user.email,
         )
 
+        surelyremote_connection = (
+            service.create_connection(
+                user_id=user.id,
+                platform="SurelyRemote",
+                login_email=user.email,
+            )
+        )
+
         if naukri_connection.platform != "Naukri":
             raise RuntimeError(
                 "Naukri connection was not created correctly."
             )
 
+        if surelyremote_connection.platform != "SurelyRemote":
+            raise RuntimeError(
+                "SurelyRemote connection was not created correctly."
+            )
+
         print(
             "Multiple Platforms   : Passed"
+        )
+
+        # ---------------------------------------------------------
+        # Unsupported platform rejection.
+        # ---------------------------------------------------------
+
+        try:
+            service.create_connection(
+                user_id=user.id,
+                platform="Remotely",
+                login_email=user.email,
+            )
+
+            raise RuntimeError(
+                "Unsupported platform was accepted."
+            )
+
+        except ValueError as exc:
+            if str(exc) != (
+                "Unsupported job platform: Remotely."
+            ):
+                raise RuntimeError(
+                    "Unexpected unsupported-platform error."
+                )
+
+        print(
+            "Unsupported Platform  : Passed"
         )
 
         # ---------------------------------------------------------
@@ -179,9 +218,9 @@ def main() -> None:
             user_id=user.id,
         )
 
-        if len(connections) != 2:
+        if len(connections) != 3:
             raise RuntimeError(
-                "Expected exactly two portal connections."
+                "Expected exactly three portal connections."
             )
 
         platforms = {
@@ -189,7 +228,13 @@ def main() -> None:
             for connection in connections
         }
 
-        if platforms != {"LinkedIn", "Naukri"}:
+        expected_platforms = {
+            "LinkedIn",
+            "Naukri",
+            "SurelyRemote",
+        }
+
+        if platforms != expected_platforms:
             raise RuntimeError(
                 "Unexpected platforms returned."
             )

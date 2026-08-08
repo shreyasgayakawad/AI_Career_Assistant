@@ -7,17 +7,15 @@ Tests authenticated portal connection API behavior.
 import app.models  # noqa: F401
 
 from fastapi import HTTPException
-from fastapi.security import HTTPAuthorizationCredentials
 
 from app.api.routes.portal_connections import (
     CreatePortalConnectionRequest,
     create_portal_connection,
     get_portal_connections,
 )
-from app.database.session import SessionLocal
-from app.models.portal_connection import PortalConnection
-from app.models.user import User
 from app.auth.jwt import create_access_token
+from app.database.session import SessionLocal
+from app.models.user import User
 
 
 def main() -> None:
@@ -29,9 +27,12 @@ def main() -> None:
 
     try:
         user_email = "portal_api_test@example.com"
+        second_user_email = (
+            "portal_api_second_user@example.com"
+        )
 
         # ---------------------------------------------------------
-        # Clean up previous test user.
+        # Clean up previous test users.
         # ---------------------------------------------------------
 
         existing_user = (
@@ -42,10 +43,20 @@ def main() -> None:
 
         if existing_user:
             session.delete(existing_user)
-            session.commit()
+
+        existing_second_user = (
+            session.query(User)
+            .filter(User.email == second_user_email)
+            .first()
+        )
+
+        if existing_second_user:
+            session.delete(existing_second_user)
+
+        session.commit()
 
         # ---------------------------------------------------------
-        # Create test user.
+        # Create primary test user.
         # ---------------------------------------------------------
 
         user = User(
@@ -66,10 +77,10 @@ def main() -> None:
             user_id=user.id,
         )
 
-        credentials = HTTPAuthorizationCredentials(
-            scheme="Bearer",
-            credentials=token,
-        )
+        if not token:
+            raise RuntimeError(
+                "Authentication token was not created."
+            )
 
         print()
         print("# Portal Connection API Test")
@@ -174,7 +185,7 @@ def main() -> None:
         )
 
         # ---------------------------------------------------------
-        # 4. Create another platform.
+        # 4. Create supported platforms.
         # ---------------------------------------------------------
 
         naukri_response = create_portal_connection(
@@ -191,23 +202,78 @@ def main() -> None:
                 "Naukri connection was not created correctly."
             )
 
+        surelyremote_response = create_portal_connection(
+            request=CreatePortalConnectionRequest(
+                platform="SurelyRemote",
+                login_email=user.email,
+            ),
+            session=session,
+            current_user=user,
+        )
+
+        if surelyremote_response.platform != "SurelyRemote":
+            raise RuntimeError(
+                "SurelyRemote connection was not created correctly."
+            )
+
         print(
             "Multiple Platforms   : Passed"
         )
 
         # ---------------------------------------------------------
-        # 5. Verify user isolation.
+        # 5. Unsupported platform rejection.
+        # ---------------------------------------------------------
+
+        try:
+            create_portal_connection(
+                request=CreatePortalConnectionRequest(
+                    platform="Remotely",
+                    login_email=user.email,
+                ),
+                session=session,
+                current_user=user,
+            )
+
+            raise RuntimeError(
+                "Unsupported platform was accepted."
+            )
+
+        except HTTPException as exc:
+            if exc.status_code != 409:
+                raise RuntimeError(
+                    "Expected HTTP 409 for unsupported "
+                    f"platform, got {exc.status_code}."
+                )
+
+            if exc.detail != (
+                "Unsupported job platform: Remotely."
+            ):
+                raise RuntimeError(
+                    "Unexpected unsupported-platform error: "
+                    f"{exc.detail}"
+                )
+
+        print(
+            "Unsupported Platform  : Passed"
+        )
+
+        # ---------------------------------------------------------
+        # 6. Create second user.
         # ---------------------------------------------------------
 
         second_user = User(
             name="Second Portal API User",
-            email="portal_api_second_user@example.com",
+            email=second_user_email,
             password_hash="test_hash",
         )
 
         session.add(second_user)
         session.commit()
         session.refresh(second_user)
+
+        # ---------------------------------------------------------
+        # 7. Verify user isolation.
+        # ---------------------------------------------------------
 
         second_user_connections = get_portal_connections(
             session=session,

@@ -38,3 +38,8 @@ class User(BaseModel):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    portal_connections: Mapped[list["PortalConnection"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

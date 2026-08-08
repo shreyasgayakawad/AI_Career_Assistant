@@ -28,3 +28,9 @@ if not JWT_SECRET_KEY:
     raise RuntimeError(
         "JWT_SECRET_KEY is not configured."
     )
+
+
+LINKEDIN_ENABLED = os.getenv(
+    "LINKEDIN_ENABLED",
+    "false",
+).lower() == "true"

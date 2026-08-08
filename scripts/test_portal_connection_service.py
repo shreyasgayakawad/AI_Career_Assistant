@@ -4,6 +4,8 @@ Portal Connection Service Test
 Tests business logic for user portal connections.
 """
 
+from datetime import datetime, timedelta, timezone
+
 import app.models  # noqa: F401
 
 from app.database.session import SessionLocal
@@ -56,6 +58,21 @@ def main() -> None:
         )
 
         # ---------------------------------------------------------
+        # OAuth test data.
+        # ---------------------------------------------------------
+
+        token_expires_at = (
+            datetime.now(timezone.utc)
+            + timedelta(hours=1)
+        ).replace(tzinfo=None)
+
+        external_user_id = "linkedin-member-service-123"
+        oauth_scopes = "openid profile email"
+        credential_reference = (
+            "credential-ref-service-test"
+        )
+
+        # ---------------------------------------------------------
         # Create LinkedIn connection.
         # ---------------------------------------------------------
 
@@ -63,6 +80,10 @@ def main() -> None:
             user_id=user.id,
             platform="LinkedIn",
             login_email=user.email,
+            credential_reference=credential_reference,
+            external_user_id=external_user_id,
+            oauth_scopes=oauth_scopes,
+            token_expires_at=token_expires_at,
         )
 
         print()
@@ -102,6 +123,43 @@ def main() -> None:
         print("Connection Creation : Passed")
 
         # ---------------------------------------------------------
+        # Verify OAuth metadata.
+        # ---------------------------------------------------------
+
+        if (
+            connection.external_user_id
+            != external_user_id
+        ):
+            raise RuntimeError(
+                "External user ID was not created correctly."
+            )
+
+        if connection.oauth_scopes != oauth_scopes:
+            raise RuntimeError(
+                "OAuth scopes were not created correctly."
+            )
+
+        if (
+            connection.credential_reference
+            != credential_reference
+        ):
+            raise RuntimeError(
+                "Credential reference was not created correctly."
+            )
+
+        if (
+            connection.token_expires_at
+            != token_expires_at
+        ):
+            raise RuntimeError(
+                "Token expiration was not created correctly."
+            )
+
+        print(
+            "OAuth Metadata Creation : Passed"
+        )
+
+        # ---------------------------------------------------------
         # Retrieve connection.
         # ---------------------------------------------------------
 
@@ -122,6 +180,46 @@ def main() -> None:
 
         print(
             "Connection Retrieval : Passed"
+        )
+
+        # ---------------------------------------------------------
+        # Verify OAuth metadata after retrieval.
+        # ---------------------------------------------------------
+
+        if (
+            found_connection.external_user_id
+            != external_user_id
+        ):
+            raise RuntimeError(
+                "External user ID was not retrieved correctly."
+            )
+
+        if (
+            found_connection.oauth_scopes
+            != oauth_scopes
+        ):
+            raise RuntimeError(
+                "OAuth scopes were not retrieved correctly."
+            )
+
+        if (
+            found_connection.credential_reference
+            != credential_reference
+        ):
+            raise RuntimeError(
+                "Credential reference was not retrieved correctly."
+            )
+
+        if (
+            found_connection.token_expires_at
+            != token_expires_at
+        ):
+            raise RuntimeError(
+                "Token expiration was not retrieved correctly."
+            )
+
+        print(
+            "OAuth Metadata Retrieval : Passed"
         )
 
         # ---------------------------------------------------------
@@ -152,7 +250,7 @@ def main() -> None:
         )
 
         # ---------------------------------------------------------
-        # Different supported platforms are allowed.
+        # Different supported platforms.
         # ---------------------------------------------------------
 
         naukri_connection = service.create_connection(
@@ -174,7 +272,10 @@ def main() -> None:
                 "Naukri connection was not created correctly."
             )
 
-        if surelyremote_connection.platform != "SurelyRemote":
+        if (
+            surelyremote_connection.platform
+            != "SurelyRemote"
+        ):
             raise RuntimeError(
                 "SurelyRemote connection was not created correctly."
             )

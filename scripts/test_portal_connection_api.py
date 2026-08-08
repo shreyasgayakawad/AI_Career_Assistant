@@ -4,6 +4,8 @@ Portal Connection API Test
 Tests authenticated portal connection API behavior.
 """
 
+from datetime import datetime, timedelta, timezone
+
 import app.models  # noqa: F401
 
 from fastapi import HTTPException
@@ -15,6 +17,7 @@ from app.api.routes.portal_connections import (
 )
 from app.auth.jwt import create_access_token
 from app.database.session import SessionLocal
+from app.models.portal_connection import PortalConnection
 from app.models.user import User
 
 
@@ -133,7 +136,56 @@ def main() -> None:
         print("Connection Creation : Passed")
 
         # ---------------------------------------------------------
-        # 2. Retrieve connections.
+        # 2. Add OAuth metadata directly to the database.
+        #
+        # In the real OAuth flow, these values will be produced
+        # by the OAuth callback rather than by the API client.
+        # ---------------------------------------------------------
+
+        connection = (
+            session.query(PortalConnection)
+            .filter(
+                PortalConnection.id
+                == create_response.id,
+            )
+            .first()
+        )
+
+        if connection is None:
+            raise RuntimeError(
+                "Created portal connection was not found."
+            )
+
+        token_expires_at = (
+            datetime.now(timezone.utc)
+            + timedelta(hours=1)
+        ).replace(tzinfo=None)
+
+        connection.external_user_id = (
+            "linkedin-member-api-123"
+        )
+
+        connection.oauth_scopes = (
+            "openid profile email"
+        )
+
+        connection.credential_reference = (
+            "secret-credential-reference"
+        )
+
+        connection.token_expires_at = (
+            token_expires_at
+        )
+
+        session.commit()
+        session.refresh(connection)
+
+        print(
+            "OAuth Metadata Setup : Passed"
+        )
+
+        # ---------------------------------------------------------
+        # 3. Retrieve connections.
         # ---------------------------------------------------------
 
         connections = get_portal_connections(
@@ -146,17 +198,65 @@ def main() -> None:
                 "Expected exactly one portal connection."
             )
 
-        if connections[0].id != create_response.id:
+        retrieved_response = connections[0]
+
+        if retrieved_response.id != create_response.id:
             raise RuntimeError(
                 "Retrieved connection ID does not match."
+            )
+
+        if (
+            retrieved_response.external_user_id
+            != "linkedin-member-api-123"
+        ):
+            raise RuntimeError(
+                "External user ID was not returned correctly."
+            )
+
+        if (
+            retrieved_response.oauth_scopes
+            != "openid profile email"
+        ):
+            raise RuntimeError(
+                "OAuth scopes were not returned correctly."
+            )
+
+        if (
+            retrieved_response.token_expires_at
+            != token_expires_at.isoformat()
+        ):
+            raise RuntimeError(
+                "Token expiration was not returned correctly."
             )
 
         print(
             "Connection Retrieval : Passed"
         )
 
+        print(
+            "OAuth Metadata Response : Passed"
+        )
+
         # ---------------------------------------------------------
-        # 3. Duplicate connection prevention.
+        # 4. Verify credential reference is not exposed.
+        # ---------------------------------------------------------
+
+        response_fields = (
+            retrieved_response.model_dump()
+        )
+
+        if "credential_reference" in response_fields:
+            raise RuntimeError(
+                "Credential reference must not be exposed "
+                "by the API response."
+            )
+
+        print(
+            "Credential Protection : Passed"
+        )
+
+        # ---------------------------------------------------------
+        # 5. Duplicate connection prevention.
         # ---------------------------------------------------------
 
         try:
@@ -185,7 +285,7 @@ def main() -> None:
         )
 
         # ---------------------------------------------------------
-        # 4. Create supported platforms.
+        # 6. Create supported platforms.
         # ---------------------------------------------------------
 
         naukri_response = create_portal_connection(
@@ -221,7 +321,7 @@ def main() -> None:
         )
 
         # ---------------------------------------------------------
-        # 5. Unsupported platform rejection.
+        # 7. Unsupported platform rejection.
         # ---------------------------------------------------------
 
         try:
@@ -258,7 +358,7 @@ def main() -> None:
         )
 
         # ---------------------------------------------------------
-        # 6. Create second user.
+        # 8. Create second user.
         # ---------------------------------------------------------
 
         second_user = User(
@@ -272,7 +372,7 @@ def main() -> None:
         session.refresh(second_user)
 
         # ---------------------------------------------------------
-        # 7. Verify user isolation.
+        # 9. Verify user isolation.
         # ---------------------------------------------------------
 
         second_user_connections = get_portal_connections(

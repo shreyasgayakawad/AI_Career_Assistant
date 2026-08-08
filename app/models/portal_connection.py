@@ -4,7 +4,9 @@ Portal Connection Model
 Represents a user's connection to an external job platform.
 """
 
-from sqlalchemy import Boolean, ForeignKey, String
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base_model import BaseModel
@@ -33,8 +35,23 @@ class PortalConnection(BaseModel):
         nullable=False,
     )
 
+    external_user_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
     credential_reference: Mapped[str | None] = mapped_column(
         String(500),
+        nullable=True,
+    )
+
+    oauth_scopes: Mapped[str | None] = mapped_column(
+        String(1000),
+        nullable=True,
+    )
+
+    token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
         nullable=True,
     )
 

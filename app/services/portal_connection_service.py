@@ -4,6 +4,8 @@ Portal Connection Service
 Provides business logic for managing user portal connections.
 """
 
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 
 from app.config.platforms import JobPlatform
@@ -48,6 +50,9 @@ class PortalConnectionService:
         platform: str,
         login_email: str,
         credential_reference: str | None = None,
+        external_user_id: str | None = None,
+        oauth_scopes: str | None = None,
+        token_expires_at: datetime | None = None,
     ) -> PortalConnection:
         """
         Create a portal connection for a user.
@@ -75,7 +80,10 @@ class PortalConnectionService:
             user_id=user_id,
             platform=platform,
             login_email=login_email,
+            external_user_id=external_user_id,
             credential_reference=credential_reference,
+            oauth_scopes=oauth_scopes,
+            token_expires_at=token_expires_at,
             enabled=True,
             status="ACTIVE",
         )

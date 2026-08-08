@@ -36,11 +36,16 @@ class CreatePortalConnectionRequest(BaseModel):
 class PortalConnectionResponse(BaseModel):
     """
     Response representing a portal connection.
+
+    OAuth credentials and tokens are never exposed.
     """
 
     id: int
     platform: str
     login_email: str
+    external_user_id: str | None
+    oauth_scopes: str | None
+    token_expires_at: str | None
     enabled: bool
     status: str
 
@@ -79,6 +84,13 @@ def create_portal_connection(
         id=connection.id,
         platform=connection.platform,
         login_email=connection.login_email,
+        external_user_id=connection.external_user_id,
+        oauth_scopes=connection.oauth_scopes,
+        token_expires_at=(
+            connection.token_expires_at.isoformat()
+            if connection.token_expires_at
+            else None
+        ),
         enabled=connection.enabled,
         status=connection.status,
     )
@@ -108,6 +120,13 @@ def get_portal_connections(
             id=connection.id,
             platform=connection.platform,
             login_email=connection.login_email,
+            external_user_id=connection.external_user_id,
+            oauth_scopes=connection.oauth_scopes,
+            token_expires_at=(
+                connection.token_expires_at.isoformat()
+                if connection.token_expires_at
+                else None
+            ),
             enabled=connection.enabled,
             status=connection.status,
         )

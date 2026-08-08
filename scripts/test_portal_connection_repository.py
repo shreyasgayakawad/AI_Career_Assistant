@@ -6,6 +6,8 @@ Tests database operations for portal connections.
 
 import app.models  # noqa: F401
 
+from datetime import datetime, timedelta, timezone
+
 from app.database.session import SessionLocal
 from app.models.portal_connection import PortalConnection
 from app.models.user import User
@@ -57,6 +59,21 @@ def main() -> None:
         )
 
         # ---------------------------------------------------------
+        # OAuth metadata.
+        # ---------------------------------------------------------
+
+        token_expires_at = (
+            datetime.now(timezone.utc)
+            + timedelta(hours=1)
+        ).replace(tzinfo=None)
+
+        oauth_scopes = (
+            "openid profile email"
+        )
+
+        external_user_id = "linkedin-member-123"
+
+        # ---------------------------------------------------------
         # Create portal connection.
         # ---------------------------------------------------------
 
@@ -64,7 +81,10 @@ def main() -> None:
             user_id=user.id,
             platform="LinkedIn",
             login_email=user.email,
-            credential_reference=None,
+            external_user_id=external_user_id,
+            credential_reference="credential-ref-test",
+            oauth_scopes=oauth_scopes,
+            token_expires_at=token_expires_at,
             enabled=True,
             status="ACTIVE",
         )
@@ -93,6 +113,46 @@ def main() -> None:
         print("Connection Creation : Passed")
 
         # ---------------------------------------------------------
+        # Verify OAuth metadata after creation.
+        # ---------------------------------------------------------
+
+        if (
+            created_connection.external_user_id
+            != external_user_id
+        ):
+            raise RuntimeError(
+                "External user ID was not persisted."
+            )
+
+        if (
+            created_connection.oauth_scopes
+            != oauth_scopes
+        ):
+            raise RuntimeError(
+                "OAuth scopes were not persisted."
+            )
+
+        if (
+            created_connection.credential_reference
+            != "credential-ref-test"
+        ):
+            raise RuntimeError(
+                "Credential reference was not persisted."
+            )
+
+        if (
+            created_connection.token_expires_at
+            != token_expires_at
+        ):
+            raise RuntimeError(
+                "Token expiration was not persisted."
+            )
+
+        print(
+            "OAuth Metadata Persistence : Passed"
+        )
+
+        # ---------------------------------------------------------
         # Find by user and platform.
         # ---------------------------------------------------------
 
@@ -108,13 +168,56 @@ def main() -> None:
                 "Portal connection was not found."
             )
 
-        if found_connection.id != created_connection.id:
+        if (
+            found_connection.id
+            != created_connection.id
+        ):
             raise RuntimeError(
                 "Retrieved connection ID does not match."
             )
 
         print(
             "User + Platform Lookup : Passed"
+        )
+
+        # ---------------------------------------------------------
+        # Verify OAuth metadata after retrieval.
+        # ---------------------------------------------------------
+
+        if (
+            found_connection.external_user_id
+            != external_user_id
+        ):
+            raise RuntimeError(
+                "External user ID was not retrieved correctly."
+            )
+
+        if (
+            found_connection.oauth_scopes
+            != oauth_scopes
+        ):
+            raise RuntimeError(
+                "OAuth scopes were not retrieved correctly."
+            )
+
+        if (
+            found_connection.credential_reference
+            != "credential-ref-test"
+        ):
+            raise RuntimeError(
+                "Credential reference was not retrieved correctly."
+            )
+
+        if (
+            found_connection.token_expires_at
+            != token_expires_at
+        ):
+            raise RuntimeError(
+                "Token expiration was not retrieved correctly."
+            )
+
+        print(
+            "OAuth Metadata Retrieval : Passed"
         )
 
         # ---------------------------------------------------------

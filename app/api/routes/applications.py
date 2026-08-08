@@ -4,12 +4,13 @@ Application Routes
 API endpoints for tracking job applications.
 """
 
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from fastapi import APIRouter, Depends, HTTPException, status
-
 from app.api.dependencies import get_db
+from app.auth.dependencies import get_current_user
 from app.models.job_posting import JobPosting
+from app.models.user import User
 from app.services.application_service import ApplicationService
 
 
@@ -26,9 +27,11 @@ router = APIRouter(
 def mark_job_as_applied(
     job_posting_id: int,
     session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, int | str]:
     """
-    Mark a specific job posting as applied.
+    Mark a specific job posting as applied
+    for the authenticated user.
     """
 
     job_posting = session.get(
@@ -44,9 +47,17 @@ def mark_job_as_applied(
 
     service = ApplicationService(session)
 
-    application = service.mark_as_applied(
-        job_posting_id=job_posting_id,
-    )
+    try:
+        application = service.mark_as_applied(
+            user_id=current_user.id,
+            job_posting_id=job_posting_id,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
 
     return {
         "id": application.id,
@@ -60,14 +71,18 @@ def mark_job_as_applied(
 )
 def get_applications(
     session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> list[dict[str, object]]:
     """
-    Retrieve all job applications.
+    Retrieve applications belonging to the
+    authenticated user.
     """
 
     service = ApplicationService(session)
 
-    applications = service.get_all_applications()
+    applications = service.get_all_applications(
+        user_id=current_user.id,
+    )
 
     return [
         {

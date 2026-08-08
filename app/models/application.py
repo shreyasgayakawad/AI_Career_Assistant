@@ -14,15 +14,20 @@ from app.models.base_model import BaseModel
 
 class Application(BaseModel):
     """
-    Represents an application submitted for a specific job posting.
+    Represents an application submitted by a user
+    for a specific job posting.
     """
 
     __tablename__ = "applications"
 
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
     job_posting_id: Mapped[int] = mapped_column(
         ForeignKey("job_postings.id"),
         nullable=False,
-        unique=True,
     )
 
     resume_id: Mapped[int | None] = mapped_column(
@@ -35,6 +40,10 @@ class Application(BaseModel):
         nullable=False,
     )
 
+    user: Mapped["User"] = relationship(
+        back_populates="applications",
+    )
+
     job_posting: Mapped["JobPosting"] = relationship(
-        back_populates="application",
+        back_populates="applications",
     )

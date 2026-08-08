@@ -17,33 +17,47 @@ class ApplicationRepository(BaseRepository[Application]):
     """
 
     def __init__(self, session: Session):
-        super().__init__(Application, session)
+        super().__init__(
+            Application,
+            session,
+        )
 
-    def get_by_job_posting_id(
+    def get_by_user_and_job_posting(
         self,
+        user_id: int,
         job_posting_id: int,
     ) -> Application | None:
         """
-        Retrieve an application by job posting ID.
+        Retrieve an application belonging to a specific
+        user and job posting.
         """
 
         statement = (
             select(Application)
             .where(
+                Application.user_id == user_id,
                 Application.job_posting_id == job_posting_id,
             )
         )
 
         return self.session.scalar(statement)
 
-    def get_all(self) -> list[Application]:
+    def get_all_for_user(
+        self,
+        user_id: int,
+    ) -> list[Application]:
         """
-        Retrieve all applications.
+        Retrieve all applications belonging to a user.
         """
 
         statement = (
             select(Application)
-            .order_by(Application.applied_at.desc())
+            .where(
+                Application.user_id == user_id,
+            )
+            .order_by(
+                Application.applied_at.desc(),
+            )
         )
 
         return list(

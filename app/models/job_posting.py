@@ -106,7 +106,7 @@ class JobPosting(BaseModel):
         back_populates="postings",
     )
 
-    application: Mapped["Application | None"] = relationship(
+    applications: Mapped[list["Application"]] = relationship(
         back_populates="job_posting",
-        uselist=False,
+        cascade="all, delete-orphan",
     )

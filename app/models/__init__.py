@@ -9,7 +9,7 @@ from app.models.company import Company
 from app.models.job import Job
 from app.models.job_posting import JobPosting
 from app.models.source import Source
-
+from app.models.user import User
 
 __all__ = [
     "Application",
@@ -17,4 +17,5 @@ __all__ = [
     "Job",
     "JobPosting",
     "Source",
+    "User",
 ]

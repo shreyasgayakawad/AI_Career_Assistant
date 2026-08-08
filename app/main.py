@@ -7,6 +7,7 @@ FastAPI application entry point.
 from fastapi import FastAPI
 
 from app.api.routes.applications import router as applications_router
+from app.api.routes.auth import router as auth_router
 from app.api.routes.job_postings import router as job_postings_router
 from app.api.routes.jobs import router as jobs_router
 
@@ -20,6 +21,7 @@ app = FastAPI(
 app.include_router(jobs_router)
 app.include_router(applications_router)
 app.include_router(job_postings_router)
+app.include_router(auth_router)
 
 
 @app.get("/")

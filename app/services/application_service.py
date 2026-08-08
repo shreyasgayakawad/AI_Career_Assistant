@@ -18,31 +18,42 @@ class ApplicationService:
     """
 
     def __init__(self, session: Session):
-        self.application_repository = ApplicationRepository(session)
+        self.application_repository = ApplicationRepository(
+            session,
+        )
 
     def get_application_by_job_posting(
         self,
+        user_id: int,
         job_posting_id: int,
     ) -> Application | None:
         """
-        Retrieve an application for a specific job posting.
+        Retrieve a user's application for a specific
+        job posting.
         """
 
-        return self.application_repository.get_by_job_posting_id(
-            job_posting_id,
+        return (
+            self.application_repository
+            .get_by_user_and_job_posting(
+                user_id=user_id,
+                job_posting_id=job_posting_id,
+            )
         )
 
     def has_applied(
         self,
+        user_id: int,
         job_posting_id: int,
     ) -> bool:
         """
-        Check whether the user has applied to a job posting.
+        Check whether a user has applied to a job posting.
         """
 
         application = (
-            self.application_repository.get_by_job_posting_id(
-                job_posting_id,
+            self.application_repository
+            .get_by_user_and_job_posting(
+                user_id=user_id,
+                job_posting_id=job_posting_id,
             )
         )
 
@@ -50,26 +61,32 @@ class ApplicationService:
 
     def mark_as_applied(
         self,
+        user_id: int,
         job_posting_id: int,
         resume_id: int | None = None,
     ) -> Application:
         """
-        Mark a job posting as applied.
+        Mark a job posting as applied for a specific user.
 
-        If an application already exists, return the existing
-        application instead of creating a duplicate.
+        Raises ValueError if that user has already applied
+        to the job posting.
         """
 
         existing_application = (
-            self.application_repository.get_by_job_posting_id(
-                job_posting_id,
+            self.application_repository
+            .get_by_user_and_job_posting(
+                user_id=user_id,
+                job_posting_id=job_posting_id,
             )
         )
 
         if existing_application is not None:
-            return existing_application
+            raise ValueError(
+                "Job posting has already been applied to."
+            )
 
         application = Application(
+            user_id=user_id,
             job_posting_id=job_posting_id,
             resume_id=resume_id,
             applied_at=datetime.utcnow(),
@@ -81,9 +98,15 @@ class ApplicationService:
 
     def get_all_applications(
         self,
+        user_id: int,
     ) -> list[Application]:
         """
-        Retrieve all applications.
+        Retrieve all applications belonging to a user.
         """
 
-        return self.application_repository.get_all()
+        return (
+            self.application_repository
+            .get_all_for_user(
+                user_id=user_id,
+            )
+        )

@@ -13,6 +13,7 @@ from app.models.portal_connection import PortalConnection
 from app.repositories.portal_connection_repository import (
     PortalConnectionRepository,
 )
+from app.security.credential_encryption import encrypt_credential
 
 
 class PortalConnectionService:
@@ -20,7 +21,10 @@ class PortalConnectionService:
     Business service for portal connections.
     """
 
-    def __init__(self, session: Session):
+    def __init__(
+        self,
+        session: Session,
+    ):
         self.portal_connection_repository = (
             PortalConnectionRepository(session)
         )
@@ -92,6 +96,76 @@ class PortalConnectionService:
             connection,
         )
 
+    def create_oauth_connection(
+        self,
+        user_id: int,
+        platform: str,
+        login_email: str,
+        external_user_id: str,
+        oauth_scopes: str,
+        access_token: str,
+        token_expires_at: datetime | None = None,
+    ) -> PortalConnection:
+        """
+        Create or update a portal connection from a successful
+        OAuth flow.
+
+        The OAuth access token is encrypted before persistence.
+        The raw access token is never stored in plaintext.
+        """
+
+        self._validate_platform(platform)
+
+        if not external_user_id:
+            raise ValueError(
+                "OAuth external user ID is required."
+            )
+
+        if not oauth_scopes:
+            raise ValueError(
+                "OAuth scopes are required."
+            )
+
+        if not access_token:
+            raise ValueError(
+                "OAuth access token is required."
+            )
+
+        encrypted_token = encrypt_credential(
+            access_token,
+        )
+
+        existing_connection = (
+            self.portal_connection_repository
+            .get_by_user_and_platform(
+                user_id=user_id,
+                platform=platform,
+            )
+        )
+
+        if existing_connection is not None:
+            return (
+                self.portal_connection_repository
+                .update_oauth_credentials(
+                    connection=existing_connection,
+                    login_email=login_email,
+                    external_user_id=external_user_id,
+                    credential_reference=encrypted_token,
+                    oauth_scopes=oauth_scopes,
+                    token_expires_at=token_expires_at,
+                )
+            )
+
+        return self.create_connection(
+            user_id=user_id,
+            platform=platform,
+            login_email=login_email,
+            credential_reference=encrypted_token,
+            external_user_id=external_user_id,
+            oauth_scopes=oauth_scopes,
+            token_expires_at=token_expires_at,
+        )
+
     def get_all_connections(
         self,
         user_id: int,
@@ -108,7 +182,9 @@ class PortalConnectionService:
         )
 
     @staticmethod
-    def _validate_platform(platform: str) -> None:
+    def _validate_platform(
+        platform: str,
+    ) -> None:
         """
         Validate that the requested platform is supported.
         """

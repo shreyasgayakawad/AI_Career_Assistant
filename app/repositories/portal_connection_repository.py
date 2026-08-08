@@ -4,6 +4,8 @@ Portal Connection Repository
 Repository for PortalConnection database operations.
 """
 
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -18,7 +20,10 @@ class PortalConnectionRepository(
     Repository for PortalConnection entities.
     """
 
-    def __init__(self, session: Session):
+    def __init__(
+        self,
+        session: Session,
+    ):
         super().__init__(
             PortalConnection,
             session,
@@ -42,6 +47,34 @@ class PortalConnectionRepository(
         )
 
         return self.session.scalar(statement)
+
+    def update_oauth_credentials(
+        self,
+        connection: PortalConnection,
+        login_email: str,
+        external_user_id: str,
+        credential_reference: str,
+        oauth_scopes: str,
+        token_expires_at: datetime | None,
+    ) -> PortalConnection:
+        """
+        Update an existing portal connection with fresh OAuth
+        credentials and metadata.
+        """
+
+        connection.login_email = login_email
+        connection.external_user_id = external_user_id
+        connection.credential_reference = credential_reference
+        connection.oauth_scopes = oauth_scopes
+        connection.token_expires_at = token_expires_at
+        connection.enabled = True
+        connection.status = "ACTIVE"
+
+        self.session.add(connection)
+        self.session.commit()
+        self.session.refresh(connection)
+
+        return connection
 
     def get_all_for_user(
         self,

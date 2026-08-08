@@ -34,3 +34,32 @@ LINKEDIN_ENABLED = os.getenv(
     "LINKEDIN_ENABLED",
     "false",
 ).lower() == "true"
+
+LINKEDIN_CLIENT_ID = os.getenv(
+    "LINKEDIN_CLIENT_ID",
+)
+
+LINKEDIN_CLIENT_SECRET = os.getenv(
+    "LINKEDIN_CLIENT_SECRET",
+)
+
+LINKEDIN_REDIRECT_URI = os.getenv(
+    "LINKEDIN_REDIRECT_URI",
+    "http://localhost:8000/auth/linkedin/callback",
+)
+
+LINKEDIN_SCOPES = os.getenv(
+    "LINKEDIN_SCOPES",
+    "openid profile email",
+)
+
+
+CREDENTIAL_ENCRYPTION_KEY = os.getenv(
+    "CREDENTIAL_ENCRYPTION_KEY",
+)
+
+
+if not CREDENTIAL_ENCRYPTION_KEY:
+    raise RuntimeError(
+        "CREDENTIAL_ENCRYPTION_KEY is not configured."
+    )

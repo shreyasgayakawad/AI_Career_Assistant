@@ -8,15 +8,13 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 
+from app.config.settings import (
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
+    JWT_SECRET_KEY,
+)
 
-# Temporary development configuration.
-# We will move the secret to environment configuration
-# before this is used outside local development.
-SECRET_KEY = "change-this-development-secret-key-32"
 
 ALGORITHM = "HS256"
-
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 def create_access_token(
@@ -31,7 +29,7 @@ def create_access_token(
     expires_at = (
         now
         + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES,
+            minutes=JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
         )
     )
 
@@ -43,7 +41,7 @@ def create_access_token(
 
     return jwt.encode(
         payload,
-        SECRET_KEY,
+        JWT_SECRET_KEY,
         algorithm=ALGORITHM,
     )
 
@@ -60,7 +58,7 @@ def decode_access_token(
     try:
         payload = jwt.decode(
             token,
-            SECRET_KEY,
+            JWT_SECRET_KEY,
             algorithms=[ALGORITHM],
         )
 

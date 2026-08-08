@@ -8,7 +8,13 @@ Multiple job postings may point to the same logical job.
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base_model import BaseModel
@@ -20,6 +26,14 @@ class JobPosting(BaseModel):
     """
 
     __tablename__ = "job_postings"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_id",
+            "external_job_id",
+            name="uq_job_posting_source_external_id",
+        ),
+    )
 
     job_id: Mapped[int] = mapped_column(
         ForeignKey("jobs.id"),
@@ -90,4 +104,9 @@ class JobPosting(BaseModel):
 
     source: Mapped["Source"] = relationship(
         back_populates="postings",
+    )
+
+    application: Mapped["Application | None"] = relationship(
+        back_populates="job_posting",
+        uselist=False,
     )

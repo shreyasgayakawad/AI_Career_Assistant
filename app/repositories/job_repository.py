@@ -61,6 +61,8 @@ class JobRepository(BaseRepository[Job]):
         keyword: str | None = None,
         company: Company | None = None,
         active_only: bool = True,
+        limit: int | None = None,
+        offset: int = 0,
     ) -> list[Job]:
         """
         Search jobs using optional filters.
@@ -69,7 +71,9 @@ class JobRepository(BaseRepository[Job]):
         statement = select(Job)
 
         if active_only:
-            statement = statement.where(Job.active.is_(True))
+            statement = statement.where(
+                Job.active.is_(True)
+            )
 
         if company is not None:
             statement = statement.where(
@@ -88,9 +92,19 @@ class JobRepository(BaseRepository[Job]):
 
         statement = statement.order_by(Job.title)
 
-        return list(self.session.scalars(statement).all())
+        if offset > 0:
+            statement = statement.offset(offset)
 
-    def get_active_jobs(self) -> list[Job]:
+        if limit is not None:
+            statement = statement.limit(limit)
+
+        return list(
+            self.session.scalars(statement).all()
+        )
+
+    def get_active_jobs(
+        self,
+    ) -> list[Job]:
         """
         Retrieve all active jobs.
         """

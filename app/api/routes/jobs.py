@@ -15,6 +15,7 @@ from app.schemas.job_schema import (
 )
 from app.services.job_search_service import JobSearchService
 
+
 router = APIRouter(
     prefix="/jobs",
     tags=["Jobs"],
@@ -27,28 +28,32 @@ router = APIRouter(
 )
 def get_jobs(
     keyword: str | None = None,
+    company: str | None = None,
     session: Session = Depends(get_db),
 ) -> list[JobSummaryResponse]:
     """
-    Retrieve active jobs.
+    Retrieve available job postings.
 
-    Optionally filter by keyword.
+    Already-applied postings are excluded.
     """
 
     service = JobSearchService(session)
 
-    if keyword:
-        jobs = service.search_jobs(keyword)
-    else:
-        jobs = service.get_active_jobs()
+    postings = service.search_available_postings(
+        keyword=keyword,
+        company_name=company,
+    )
 
     return [
         JobSummaryResponse(
-            id=job.id,
-            title=job.title,
-            company=job.company.name,
+            id=posting.id,
+            job_id=posting.job_id,
+            title=posting.title,
+            company=posting.job.company.name,
+            location=posting.location,
+            posting_url=posting.posting_url,
         )
-        for job in jobs
+        for posting in postings
     ]
 
 
@@ -61,7 +66,7 @@ def get_job(
     session: Session = Depends(get_db),
 ) -> JobDetailResponse:
     """
-    Retrieve a job by ID.
+    Retrieve a logical job by ID.
     """
 
     service = JobSearchService(session)
@@ -74,9 +79,27 @@ def get_job(
             detail="Job not found.",
         )
 
+    posting = next(
+        (
+            posting
+            for posting in job.postings
+            if posting.status == "ACTIVE"
+        ),
+        None,
+    )
+
+    if posting is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No active job posting found.",
+        )
+
     return JobDetailResponse(
-        id=job.id,
-        title=job.title,
+        id=posting.id,
+        job_id=job.id,
+        title=posting.title,
         company=job.company.name,
-        description=job.description,
+        location=posting.location,
+        posting_url=posting.posting_url,
+        description=posting.description,
     )

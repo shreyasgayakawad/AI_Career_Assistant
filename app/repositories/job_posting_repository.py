@@ -7,6 +7,9 @@ Repository for JobPosting database operations.
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.application import Application
+from app.models.company import Company
+from app.models.job import Job
 from app.models.job_posting import JobPosting
 from app.repositories.base_repository import BaseRepository
 
@@ -33,3 +36,58 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         )
 
         return self.session.scalar(statement)
+
+    def search(
+        self,
+        *,
+        keyword: str | None = None,
+        company: Company | None = None,
+        exclude_applied: bool = True,
+    ) -> list[JobPosting]:
+        """
+        Search active job postings using optional filters.
+
+        By default, postings that already have an application
+        are excluded.
+        """
+
+        statement = (
+            select(JobPosting)
+            .join(JobPosting.job)
+        )
+
+        statement = statement.where(
+            Job.active.is_(True),
+            JobPosting.status == "ACTIVE",
+        )
+
+        if company is not None:
+            statement = statement.where(
+                Job.company_id == company.id,
+            )
+
+        if keyword:
+            pattern = f"%{keyword}%"
+
+            statement = statement.where(
+                JobPosting.title.ilike(pattern)
+                | JobPosting.description.ilike(pattern)
+            )
+
+        if exclude_applied:
+            statement = statement.where(
+                ~select(Application.id)
+                .where(
+                    Application.job_posting_id
+                    == JobPosting.id,
+                )
+                .exists()
+            )
+
+        statement = statement.order_by(
+            JobPosting.title,
+        )
+
+        return list(
+            self.session.scalars(statement).all()
+        )

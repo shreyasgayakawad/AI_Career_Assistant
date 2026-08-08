@@ -9,12 +9,15 @@ from pydantic import BaseModel, ConfigDict
 
 class JobSummaryResponse(BaseModel):
     """
-    Job summary returned in job listings.
+    Job posting summary returned in job listings.
     """
 
     id: int
+    job_id: int
     title: str
     company: str
+    location: str | None
+    posting_url: str
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -23,12 +26,15 @@ class JobSummaryResponse(BaseModel):
 
 class JobDetailResponse(BaseModel):
     """
-    Detailed job information.
+    Detailed job posting information.
     """
 
     id: int
+    job_id: int
     title: str
     company: str
+    location: str | None
+    posting_url: str
     description: str | None
 
     model_config = ConfigDict(

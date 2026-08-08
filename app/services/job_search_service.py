@@ -36,7 +36,7 @@ class JobSearchService:
         Retrieve all active jobs.
         """
 
-        return self.job_repository.get_active_jobs()
+        return self.job_repository.search()
 
     def get_company_jobs(
         self,
@@ -46,7 +46,9 @@ class JobSearchService:
         Retrieve all jobs for a company.
         """
 
-        return self.job_repository.get_by_company(company)
+        return self.job_repository.search(
+            company=company,
+        )
 
     def search_jobs(
         self,
@@ -56,4 +58,6 @@ class JobSearchService:
         Search jobs by keyword.
         """
 
-        return self.job_repository.search(keyword)
+        return self.job_repository.search(
+            keyword=keyword,
+        )

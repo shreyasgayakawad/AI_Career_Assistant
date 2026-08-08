@@ -57,24 +57,36 @@ class JobRepository(BaseRepository[Job]):
 
     def search(
         self,
-        keyword: str,
+        *,
+        keyword: str | None = None,
+        company: Company | None = None,
+        active_only: bool = True,
     ) -> list[Job]:
         """
-        Search jobs by title or description.
+        Search jobs using optional filters.
         """
 
-        pattern = f"%{keyword}%"
+        statement = select(Job)
 
-        statement = (
-            select(Job)
-            .where(
+        if active_only:
+            statement = statement.where(Job.active.is_(True))
+
+        if company is not None:
+            statement = statement.where(
+                Job.company_id == company.id,
+            )
+
+        if keyword:
+            pattern = f"%{keyword}%"
+
+            statement = statement.where(
                 or_(
                     Job.title.ilike(pattern),
                     Job.description.ilike(pattern),
                 )
             )
-            .order_by(Job.title)
-        )
+
+        statement = statement.order_by(Job.title)
 
         return list(self.session.scalars(statement).all())
 
@@ -83,10 +95,4 @@ class JobRepository(BaseRepository[Job]):
         Retrieve all active jobs.
         """
 
-        statement = (
-            select(Job)
-            .where(Job.active.is_(True))
-            .order_by(Job.title)
-        )
-
-        return list(self.session.scalars(statement).all())
+        return self.search()

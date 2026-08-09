@@ -23,7 +23,10 @@ class OAuthStateService:
 
     STATE_EXPIRATION_MINUTES = 10
 
-    def __init__(self, session: Session):
+    def __init__(
+        self,
+        session: Session,
+    ):
         self.oauth_state_repository = (
             OAuthStateRepository(session)
         )
@@ -44,7 +47,9 @@ class OAuthStateService:
             + timedelta(
                 minutes=self.STATE_EXPIRATION_MINUTES,
             )
-        ).replace(tzinfo=None)
+        ).replace(
+            tzinfo=None,
+        )
 
         oauth_state = OAuthState(
             user_id=user_id,
@@ -101,13 +106,45 @@ class OAuthStateService:
                 "OAuth state platform mismatch."
             )
 
-        now = datetime.now(timezone.utc).replace(
+        now = datetime.now(
+            timezone.utc,
+        ).replace(
             tzinfo=None,
         )
 
         if oauth_state.expires_at <= now:
             raise ValueError(
                 "OAuth state has expired."
+            )
+
+        return oauth_state
+
+    def consume_state(
+        self,
+        state: str,
+        user_id: int,
+        platform: str,
+    ) -> OAuthState:
+        """
+        Validate and atomically consume an OAuth state.
+
+        A successfully validated state is deleted immediately,
+        preventing it from being reused.
+        """
+
+        oauth_state = self.validate_state(
+            state=state,
+            user_id=user_id,
+            platform=platform,
+        )
+
+        consumed = self.oauth_state_repository.consume(
+            oauth_state,
+        )
+
+        if not consumed:
+            raise ValueError(
+                "Invalid OAuth state."
             )
 
         return oauth_state

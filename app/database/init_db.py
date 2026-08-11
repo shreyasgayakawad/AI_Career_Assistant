@@ -11,6 +11,9 @@ from app.database.engine import engine
 
 from app.models.application import Application  # noqa: F401
 from app.models.company import Company  # noqa: F401
+from app.models.google_login_state import (  # noqa: F401
+    GoogleLoginState,
+)
 from app.models.job import Job  # noqa: F401
 from app.models.job_posting import JobPosting  # noqa: F401
 from app.models.portal_connection import PortalConnection  # noqa: F401

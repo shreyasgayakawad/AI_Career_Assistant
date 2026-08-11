@@ -6,6 +6,7 @@ Import all SQLAlchemy models so they are registered with the ORM.
 
 from app.models.application import Application
 from app.models.company import Company
+from app.models.google_login_state import GoogleLoginState
 from app.models.job import Job
 from app.models.job_posting import JobPosting
 from app.models.oauth_state import OAuthState
@@ -17,6 +18,7 @@ from app.models.user import User
 __all__ = [
     "Application",
     "Company",
+    "GoogleLoginState",
     "Job",
     "JobPosting",
     "OAuthState",

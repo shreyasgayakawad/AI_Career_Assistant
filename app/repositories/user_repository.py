@@ -33,3 +33,20 @@ class UserRepository(BaseRepository[User]):
         )
 
         return self.session.scalar(statement)
+
+    def get_by_google_subject(
+        self,
+        google_subject: str,
+    ) -> User | None:
+        """
+        Retrieve a user by their Google OpenID Connect subject.
+        """
+
+        statement = (
+            select(User)
+            .where(
+                User.google_subject == google_subject,
+            )
+        )
+
+        return self.session.scalar(statement)

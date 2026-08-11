@@ -34,6 +34,13 @@ class User(BaseModel):
         nullable=False,
     )
 
+    google_subject: Mapped[str | None] = mapped_column(
+        String(255),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
+
     applications: Mapped[list["Application"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",

@@ -1,8 +1,8 @@
 """
 LinkedIn OAuth Routes
 
-Provides authorization and callback endpoints for LinkedIn
-OpenID Connect authentication.
+Provides authorization, callback, and connection-status endpoints
+for LinkedIn OpenID Connect authentication.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,6 +16,10 @@ from app.models.user import User
 from app.services.linkedin.oauth_service import (
     LinkedInOAuthService,
 )
+from app.services.portal_connection_service import (
+    PortalConnectionService,
+)
+
 
 router = APIRouter(
     prefix="/auth/linkedin",
@@ -136,6 +140,61 @@ def linkedin_callback(
         "linkedin_user_id": connection.external_user_id,
         "name": userinfo.get("name"),
         "email": userinfo.get("email"),
+        "token_expires_at": (
+            connection.token_expires_at.isoformat()
+            if connection.token_expires_at
+            else None
+        ),
+    }
+
+
+@router.get(
+    "/status",
+)
+def linkedin_status(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, object]:
+    """
+    Return the LinkedIn connection status for the
+    currently authenticated user.
+    """
+
+    if not LINKEDIN_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LinkedIn integration is disabled.",
+        )
+
+    service = PortalConnectionService(
+        session,
+    )
+
+    connection = service.get_connection(
+        user_id=current_user.id,
+        platform="LinkedIn",
+    )
+
+    if connection is None:
+        return {
+            "connected": False,
+            "platform": "LinkedIn",
+            "connection_id": None,
+            "status": None,
+            "enabled": False,
+            "token_expires_at": None,
+        }
+
+    return {
+        "connected": (
+            connection.status == "ACTIVE"
+            and connection.enabled
+            and bool(connection.credential_reference)
+        ),
+        "platform": connection.platform,
+        "connection_id": connection.id,
+        "status": connection.status,
+        "enabled": connection.enabled,
         "token_expires_at": (
             connection.token_expires_at.isoformat()
             if connection.token_expires_at

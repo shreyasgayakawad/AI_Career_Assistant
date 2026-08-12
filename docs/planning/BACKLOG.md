@@ -1,12 +1,8 @@
-\# AI Career Assistant
+# AI Career Assistant
 
+# BACKLOG
 
-
-\# BACKLOG
-
-
-
-\*\*Status:\*\* Active
+**Status:** Active
 
 Priority Legend
 
@@ -14,223 +10,185 @@ Priority Legend
 🟡 Medium Priority
 🟢 Low Priority
 
-\---
+---
 
+# Completed Work
 
+The following capabilities have already been implemented and are no longer active backlog items.
+
+## Core Backend
 
-\# Epic 3 - Core Backend
+- [x] Application structure under `app/`
+- [x] Repository pattern
+- [x] Service layer
+- [x] Database initialization
+- [x] Database schema migration scripts
+- [x] User-specific application tracking
+- [x] Candidate profile persistence
 
+## Authentication & Portal Integration
 
+- [x] Google OAuth authentication
+- [x] Google login state management
+- [x] Google identity linking
+- [x] Secure browser session handling
+- [x] LinkedIn OAuth flow
+- [x] Encrypted portal credential storage
+- [x] Portal connection management
 
-\## Features
+## Job Discovery & Application Flow
 
+- [x] Job and company models
+- [x] Job posting model
+- [x] Job search service
+- [x] Job posting search filters
+- [x] Career dashboard
+- [x] Job detail pages
+- [x] Application tracking
+- [x] Mark-as-applied workflow
+- [x] My Applications page
 
+## Candidate Profile
 
-\* Core application architecture
+- [x] Candidate profile model
+- [x] Candidate profile repository
+- [x] Candidate profile service
+- [x] Candidate profile API
+- [x] Candidate profile browser page
+- [x] Candidate profile update workflow
+- [x] Candidate profile database migration
+- [x] Candidate profile tests
 
-\* Central configuration management
+---
 
-\* Database management
+# Epic 3 - Core Backend
 
-\* Logging framework
+## Remaining Technical Tasks
 
+- [ ] Improve configuration loading
+- [ ] Improve logging
+- [ ] Organize database module
+- [ ] Standardize unit testing framework
+- [ ] Evaluate database migration framework
 
+---
 
-\## Technical Tasks
+# Epic 4 - Job Discovery Engine
 
+## Features
 
+* Search jobs from multiple platforms
+* Search remote jobs
+* Filter by role and location
+* Remove duplicate jobs
 
-\* \[ ] Migrate code into `app/`
+## Technical Tasks
 
-\* \[ ] Create repository pattern
+- [ ] LinkedIn job scraper
+- [ ] Indeed job scraper
+- [ ] Wellfound job scraper
+- [ ] RemoteOK scraper
+- [ ] Company careers scraper
+- [ ] Job normalization
+- [ ] Duplicate detection
+- [ ] Advanced search filters
+- [ ] Remote-job filtering
 
-\* \[ ] Create service layer
+---
 
-\* \[ ] Improve configuration loading
+# Epic 5 - AI Intelligence Engine
 
-\* \[ ] Improve logging
+## Features
 
-\* \[ ] Organize database module
+* AI job matching
+* Resume optimization
+* Cover letter generation
+* ATS optimization
+* Skill-gap analysis
 
+## Technical Tasks
 
+- [ ] Resume model and document management
+- [ ] Resume matching engine
+- [ ] Resume tailoring engine
+- [ ] Cover letter generator
+- [ ] Prompt management
+- [ ] AI service layer
+- [ ] ATS optimization
+- [ ] Skill-gap analysis
 
-\---
+---
 
+# Epic 6 - Networking Engine
 
+## Features
 
-\# Epic 4 - Job Discovery Engine
+* Find recruiters
+* Find employees
+* Referral assistance
+* Outreach tracking
 
+## Technical Tasks
 
+- [ ] LinkedIn employee search
+- [ ] Recruiter finder
+- [ ] Referral message generator
+- [ ] Outreach tracker
 
-\## Features
+---
 
+# Epic 7 - Career Dashboard
 
+## Features
 
-\* Search jobs from multiple platforms
+* Application tracking
+* Career analytics
+* Match scores
+* Progress dashboard
 
-\* Search remote jobs
+## Technical Tasks
 
-\* Filter by role and location
+- [x] Dashboard UI
+- [ ] Analytics service
+- [ ] Charts and reports
+- [ ] Application timeline
+- [ ] Match score display
+- [ ] Career progress reports
 
-\* Remove duplicate jobs
+---
 
-
-
-\## Technical Tasks
-
-
-
-\* \[ ] LinkedIn job scraper
-
-\* \[ ] Indeed job scraper
-
-\* \[ ] Wellfound job scraper
-
-\* \[ ] RemoteOK scraper
-
-\* \[ ] Company careers scraper
-
-\* \[ ] Job normalization
-
-\* \[ ] Duplicate detection
-
-
-
-\---
-
-
-
-\# Epic 5 - AI Intelligence Engine
-
-
-
-\## Features
-
-
-
-\* AI job matching
-
-\* Resume optimization
-
-\* Cover letter generation
-
-\* ATS optimization
-
-
-
-\## Technical Tasks
-
-
-
-\* \[ ] Resume matching engine
-
-\* \[ ] Resume tailoring engine
-
-\* \[ ] Cover letter generator
-
-\* \[ ] Prompt management
-
-\* \[ ] AI service layer
-
-
-
-\---
-
-
-
-\# Epic 6 - Networking Engine
-
-
-
-\## Features
-
-
-
-\* Find recruiters
-
-\* Find employees
-
-\* Referral assistance
-
-\* Outreach tracking
-
-
-
-\## Technical Tasks
-
-
-
-\* \[ ] LinkedIn employee search
-
-\* \[ ] Recruiter finder
-
-\* \[ ] Referral message generator
-
-\* \[ ] Outreach tracker
-
-
-
-\---
-
-
-
-\# Epic 7 - Career Dashboard
-
-
-
-\## Features
-
-
-
-\* Application tracking
-
-\* Career analytics
-
-\* Match scores
-
-\* Progress dashboard
-
-
-
-\## Technical Tasks
-
-
-
-\* \[ ] Dashboard UI
-
-\* \[ ] Analytics service
-
-\* \[ ] Charts and reports
-
-\* \[ ] Application timeline
-
-
-
-\---
-
-
-
-\# Future Ideas
-
-
+# Future Ideas
 
 These ideas are intentionally out of scope for the current milestones.
 
+- Chrome extension
+- Email integration
+- Calendar integration
+- Salary intelligence
+- GitHub profile analysis
+- Learning recommendations
+- AI interview coach
 
+---
 
-\* Chrome extension
+# Definition of Done
 
-\* Email integration
+A backlog task is complete only when:
 
-\* Calendar integration
+- Implementation completed
+- Documentation updated when applicable
+- Tests added when applicable
+- Code reviewed
+- Changes committed
+- Repository remains clean
 
-\* Salary intelligence
+---
 
-\* GitHub profile analysis
+# Backlog Rules
 
-\* Learning recommendations
-
-\* AI interview coach
-
-
-
+1. New ideas begin in `FEATURE_IDEAS.md`.
+2. Approved work moves into this backlog.
+3. A backlog item becomes part of a sprint only after scope is defined.
+4. Completed items are marked `[x]`.
+5. Avoid duplicating completed work in active backlog sections.
+6. Prefer small, verifiable implementation tasks.

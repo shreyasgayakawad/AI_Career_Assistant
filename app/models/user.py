@@ -50,3 +50,9 @@ class User(BaseModel):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    candidate_profile: Mapped["CandidateProfile | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )

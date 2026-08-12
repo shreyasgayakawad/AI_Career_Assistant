@@ -17,14 +17,13 @@ from app.api.routes.linkedin_oauth import (
 from app.api.routes.portal_connections import (
     router as portal_connections_router,
 )
+from app.api.routes.profile import router as profile_router
 from app.api.routes.web import router as web_router
-
 
 app = FastAPI(
     title="AI Career Assistant",
     version="1.0.0",
 )
-
 
 app.include_router(jobs_router)
 app.include_router(applications_router)
@@ -33,6 +32,7 @@ app.include_router(auth_router)
 app.include_router(google_oauth_router)
 app.include_router(portal_connections_router)
 app.include_router(linkedin_oauth_router)
+app.include_router(profile_router)
 app.include_router(web_router)
 
 

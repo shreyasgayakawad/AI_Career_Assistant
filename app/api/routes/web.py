@@ -2,7 +2,7 @@
 Browser Routes
 
 Provides the browser sign-in, session, career dashboard,
-job-detail, and application pages.
+job-detail, application, and candidate profile pages.
 """
 
 from html import escape
@@ -18,6 +18,9 @@ from app.config.settings import AUTH_COOKIE_NAME, GOOGLE_ENABLED
 from app.models.job_posting import JobPosting
 from app.models.user import User
 from app.services.application_service import ApplicationService
+from app.services.candidate_profile_service import (
+    CandidateProfileService,
+)
 from app.services.job_search_service import JobSearchService
 from app.services.portal_connection_service import (
     PortalConnectionService,
@@ -201,7 +204,10 @@ def session_page(
           <meta charset="utf-8">
           <meta name="viewport"
                 content="width=device-width, initial-scale=1">
-          <title>Your session | AI Career Assistant</title>
+
+          <title>
+            Your session | AI Career Assistant
+          </title>
 
           <style>
             body {{
@@ -235,12 +241,21 @@ def session_page(
               color: #1a73e8;
               font-weight: 700;
             }}
+
+            .navigation {{
+              display: flex;
+              flex-wrap: wrap;
+              gap: 16px;
+              margin-top: 24px;
+            }}
           </style>
         </head>
 
         <body>
           <main>
-            <h1>Welcome, {escape(user.name)}</h1>
+            <h1>
+              Welcome, {escape(user.name)}
+            </h1>
 
             <p>
               {escape(user.email)}
@@ -254,11 +269,15 @@ def session_page(
               </p>
             </section>
 
-            <p>
+            <nav class="navigation">
               <a href="/dashboard">
                 Open Career Dashboard
               </a>
-            </p>
+
+              <a href="/dashboard/profile">
+                Candidate Profile
+              </a>
+            </nav>
           </main>
         </body>
         </html>
@@ -293,7 +312,9 @@ def dashboard_page(
         job_cards.append(
             f"""
             <article class="job-card">
-              <h2>{escape(posting.title)}</h2>
+              <h2>
+                {escape(posting.title)}
+              </h2>
 
               <p>
                 <strong>
@@ -361,11 +382,10 @@ def dashboard_page(
               margin-top: 0;
             }}
 
-            form {{
+            form.search-form {{
               display: grid;
               gap: 12px;
-              grid-template-columns:
-                1fr 1fr auto;
+              grid-template-columns: 1fr 1fr auto;
               margin-top: 24px;
             }}
 
@@ -373,6 +393,8 @@ def dashboard_page(
               border: 1px solid #d6dce5;
               border-radius: 8px;
               padding: 12px;
+              box-sizing: border-box;
+              width: 100%;
             }}
 
             button {{
@@ -382,6 +404,7 @@ def dashboard_page(
               color: white;
               cursor: pointer;
               padding: 12px 20px;
+              font-weight: 700;
             }}
 
             .jobs {{
@@ -428,7 +451,7 @@ def dashboard_page(
             }}
 
             @media (max-width: 700px) {{
-              form {{
+              form.search-form {{
                 grid-template-columns: 1fr;
               }}
             }}
@@ -445,6 +468,7 @@ def dashboard_page(
               </p>
 
               <form
+                class="search-form"
                 method="get"
                 action="/dashboard"
               >
@@ -452,14 +476,14 @@ def dashboard_page(
                   type="search"
                   name="keyword"
                   placeholder="Search jobs"
-                  value="{escape(keyword or "")}"
+                  value="{escape(keyword or '')}"
                 />
 
                 <input
                   type="search"
                   name="company"
                   placeholder="Company"
-                  value="{escape(company or "")}"
+                  value="{escape(company or '')}"
                 />
 
                 <button type="submit">
@@ -470,6 +494,10 @@ def dashboard_page(
               <nav class="navigation">
                 <a href="/dashboard">
                   Available Jobs
+                </a>
+
+                <a href="/dashboard/profile">
+                  Candidate Profile
                 </a>
 
                 <a href="/dashboard/applications">
@@ -489,6 +517,307 @@ def dashboard_page(
         </body>
         </html>
         """,
+    )
+
+
+@router.get(
+    "/dashboard/profile",
+    response_class=HTMLResponse,
+)
+def dashboard_profile_page(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> HTMLResponse:
+    """
+    Render the authenticated user's candidate profile.
+    """
+
+    service = CandidateProfileService(session)
+
+    profile = service.get_or_create_profile(
+        current_user.id,
+    )
+
+    phone = escape(profile.phone or "")
+    location = escape(profile.location or "")
+    professional_summary = escape(
+        profile.professional_summary or "",
+    )
+    skills = escape(profile.skills or "")
+    experience = escape(profile.experience or "")
+    education = escape(profile.education or "")
+
+    return HTMLResponse(
+        content=f"""
+        <!doctype html>
+        <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport"
+                content="width=device-width, initial-scale=1">
+
+          <title>
+            Candidate Profile | AI Career Assistant
+          </title>
+
+          <style>
+            body {{
+              font-family: Arial, sans-serif;
+              background: #f7f8fc;
+              color: #172033;
+              margin: 0;
+            }}
+
+            main {{
+              margin: 48px auto;
+              max-width: 900px;
+              padding: 24px;
+            }}
+
+            header,
+            section {{
+              background: white;
+              border-radius: 16px;
+              box-shadow:
+                0 10px 30px rgba(23, 32, 51, .10);
+              padding: 24px;
+            }}
+
+            section {{
+              margin-top: 24px;
+            }}
+
+            h1,
+            h2 {{
+              margin-top: 0;
+            }}
+
+            .profile-form {{
+              display: grid;
+              gap: 18px;
+            }}
+
+            .field {{
+              display: grid;
+              gap: 8px;
+            }}
+
+            label {{
+              font-weight: 700;
+            }}
+
+            input,
+            textarea {{
+              border: 1px solid #d6dce5;
+              border-radius: 8px;
+              box-sizing: border-box;
+              font-family: inherit;
+              font-size: 15px;
+              padding: 12px;
+              width: 100%;
+            }}
+
+            textarea {{
+              min-height: 130px;
+              resize: vertical;
+            }}
+
+            .button {{
+              background: #1a73e8;
+              border: 0;
+              border-radius: 8px;
+              color: white;
+              cursor: pointer;
+              display: inline-block;
+              font-family: inherit;
+              font-size: 15px;
+              font-weight: 700;
+              padding: 12px 20px;
+              text-decoration: none;
+            }}
+
+            .navigation {{
+              display: flex;
+              flex-wrap: wrap;
+              gap: 16px;
+              margin-top: 20px;
+            }}
+
+            .navigation a {{
+              color: #1a73e8;
+              font-weight: 700;
+              text-decoration: none;
+            }}
+
+            .profile-meta {{
+              color: #596579;
+              line-height: 1.5;
+            }}
+          </style>
+        </head>
+
+        <body>
+          <main>
+            <header>
+              <h1>Candidate Profile</h1>
+
+              <p class="profile-meta">
+                Build the profile used by the AI Career Assistant
+                to understand your career background.
+              </p>
+
+              <p class="profile-meta">
+                Profile for {escape(current_user.name)}.
+              </p>
+
+              <nav class="navigation">
+                <a href="/dashboard">
+                  Available Jobs
+                </a>
+
+                <a href="/dashboard/applications">
+                  My Applications
+                </a>
+
+                <a href="/session">
+                  Connection Status
+                </a>
+              </nav>
+            </header>
+
+            <section>
+              <form
+                class="profile-form"
+                method="post"
+                action="/dashboard/profile"
+              >
+                <div class="field">
+                  <label for="phone">
+                    Phone
+                  </label>
+
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="text"
+                    value="{phone}"
+                    maxlength="50"
+                  />
+                </div>
+
+                <div class="field">
+                  <label for="location">
+                    Location
+                  </label>
+
+                  <input
+                    id="location"
+                    name="location"
+                    type="text"
+                    value="{location}"
+                    maxlength="255"
+                  />
+                </div>
+
+                <div class="field">
+                  <label for="professional_summary">
+                    Professional Summary
+                  </label>
+
+                  <textarea
+                    id="professional_summary"
+                    name="professional_summary"
+                  >{professional_summary}</textarea>
+                </div>
+
+                <div class="field">
+                  <label for="skills">
+                    Skills
+                  </label>
+
+                  <textarea
+                    id="skills"
+                    name="skills"
+                  >{skills}</textarea>
+                </div>
+
+                <div class="field">
+                  <label for="experience">
+                    Experience
+                  </label>
+
+                  <textarea
+                    id="experience"
+                    name="experience"
+                  >{experience}</textarea>
+                </div>
+
+                <div class="field">
+                  <label for="education">
+                    Education
+                  </label>
+
+                  <textarea
+                    id="education"
+                    name="education"
+                  >{education}</textarea>
+                </div>
+
+                <div>
+                  <button
+                    class="button"
+                    type="submit"
+                  >
+                    Save Profile
+                  </button>
+                </div>
+              </form>
+            </section>
+          </main>
+        </body>
+        </html>
+        """,
+    )
+
+
+@router.post(
+    "/dashboard/profile",
+)
+def update_dashboard_profile(
+    phone: str | None = Form(default=None),
+    location: str | None = Form(default=None),
+    professional_summary: str | None = Form(
+        default=None,
+    ),
+    skills: str | None = Form(default=None),
+    experience: str | None = Form(default=None),
+    education: str | None = Form(default=None),
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Update the authenticated user's candidate profile.
+    """
+
+    service = CandidateProfileService(session)
+
+    service.update_profile(
+        user_id=current_user.id,
+        phone=phone.strip() if phone else None,
+        location=location.strip() if location else None,
+        professional_summary=(
+            professional_summary.strip()
+            if professional_summary
+            else None
+        ),
+        skills=skills.strip() if skills else None,
+        experience=experience.strip() if experience else None,
+        education=education.strip() if education else None,
+    )
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
     )
 
 
@@ -616,7 +945,7 @@ def dashboard_job_detail_page(
     if already_applied:
         application_control = """
         <p class="applied">
-          ✓ You have already applied to this job.
+          &#10003; You have already applied to this job.
         </p>
         """
     else:
@@ -710,6 +1039,10 @@ def dashboard_job_detail_page(
               flex-wrap: wrap;
               gap: 12px;
               margin-top: 32px;
+            }}
+
+            .actions form {{
+              margin: 0;
             }}
 
             .button {{
@@ -1003,6 +1336,10 @@ def dashboard_applications_page(
               <nav>
                 <a href="/dashboard">
                   Available Jobs
+                </a>
+
+                <a href="/dashboard/profile">
+                  Candidate Profile
                 </a>
 
                 <a href="/session">

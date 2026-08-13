@@ -38,7 +38,9 @@ class JobImportService:
         Retrieve an existing company or create a new one.
         """
 
-        company = self.company_repository.get_by_name(company_name)
+        company = self.company_repository.get_by_name(
+            company_name,
+        )
 
         if company is not None:
             return company
@@ -81,7 +83,9 @@ class JobImportService:
         Retrieve an existing source.
         """
 
-        source = self.source_repository.get_by_name(source_name)
+        source = self.source_repository.get_by_name(
+            source_name,
+        )
 
         if source is None:
             raise ValueError(
@@ -92,15 +96,32 @@ class JobImportService:
 
     def job_posting_exists(
         self,
+        *,
         url: str,
+        source: Source,
+        external_job_id: str | None = None,
     ) -> bool:
         """
         Check whether a job posting already exists.
+
+        A posting is considered a duplicate when its URL already
+        exists or, when available, its source/external ID already exists.
         """
 
-        posting = self.job_posting_repository.get_by_url(url)
+        if self.job_posting_repository.get_by_url(url) is not None:
+            return True
 
-        return posting is not None
+        if external_job_id:
+            return (
+                self.job_posting_repository
+                .get_by_source_and_external_id(
+                    source=source,
+                    external_job_id=external_job_id,
+                )
+                is not None
+            )
+
+        return False
 
     def create_job_posting(
         self,
@@ -142,7 +163,15 @@ class JobImportService:
         Import a single scraped job.
         """
 
-        if self.job_posting_exists(scraped_job.url):
+        source = self.get_source(
+            source_name,
+        )
+
+        if self.job_posting_exists(
+            url=scraped_job.url,
+            source=source,
+            external_job_id=scraped_job.external_job_id,
+        ):
             return None
 
         company = self.get_or_create_company(
@@ -152,10 +181,6 @@ class JobImportService:
         job = self.get_or_create_job(
             title=scraped_job.title,
             company=company,
-        )
-
-        source = self.get_source(
-            source_name,
         )
 
         return self.create_job_posting(

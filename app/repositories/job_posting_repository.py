@@ -11,6 +11,7 @@ from app.models.application import Application
 from app.models.company import Company
 from app.models.job import Job
 from app.models.job_posting import JobPosting
+from app.models.source import Source
 from app.repositories.base_repository import BaseRepository
 
 
@@ -33,6 +34,25 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         statement = (
             select(JobPosting)
             .where(JobPosting.posting_url == url)
+        )
+
+        return self.session.scalar(statement)
+
+    def get_by_source_and_external_id(
+        self,
+        source: Source,
+        external_job_id: str,
+    ) -> JobPosting | None:
+        """
+        Retrieve a job posting by source and external job ID.
+        """
+
+        statement = (
+            select(JobPosting)
+            .where(
+                JobPosting.source_id == source.id,
+                JobPosting.external_job_id == external_job_id,
+            )
         )
 
         return self.session.scalar(statement)

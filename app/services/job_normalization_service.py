@@ -12,18 +12,51 @@ class JobNormalizationService:
     Normalizes incoming ScrapedJob objects.
     """
 
+    ALLOWED_WORK_MODES = {
+        "REMOTE",
+        "HYBRID",
+        "ONSITE",
+        "UNKNOWN",
+    }
+
     @staticmethod
     def _normalize_required(value: str) -> str:
         return value.strip()
 
     @staticmethod
-    def _normalize_optional(value: str | None) -> str | None:
+    def _normalize_optional(
+        value: str | None,
+    ) -> str | None:
         if value is None:
             return None
 
         value = value.strip()
 
         return value or None
+
+    @classmethod
+    def _normalize_work_mode(
+        cls,
+        value: str | None,
+    ) -> str:
+        """
+        Normalize work mode to a supported value.
+
+        Missing, blank, or unsupported values become UNKNOWN.
+        """
+
+        if value is None:
+            return "UNKNOWN"
+
+        value = value.strip().upper()
+
+        if not value:
+            return "UNKNOWN"
+
+        if value not in cls.ALLOWED_WORK_MODES:
+            return "UNKNOWN"
+
+        return value
 
     def normalize(
         self,
@@ -40,11 +73,14 @@ class JobNormalizationService:
             title=self._normalize_required(
                 scraped_job.title,
             ),
-            location=self._normalize_required(
+            location=self._normalize_optional(
                 scraped_job.location,
             ),
             url=self._normalize_required(
                 scraped_job.url,
+            ),
+            work_mode=self._normalize_work_mode(
+                scraped_job.work_mode,
             ),
             description=self._normalize_optional(
                 scraped_job.description,

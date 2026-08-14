@@ -12,7 +12,9 @@ from app.models.job import Job
 from app.models.job_posting import JobPosting
 from app.models.source import Source
 from app.repositories.company_repository import CompanyRepository
-from app.repositories.job_posting_repository import JobPostingRepository
+from app.repositories.job_posting_repository import (
+    JobPostingRepository,
+)
 from app.repositories.job_repository import JobRepository
 from app.repositories.source_repository import SourceRepository
 
@@ -25,10 +27,18 @@ class JobImportService:
     def __init__(self, session: Session):
         self.session = session
 
-        self.company_repository = CompanyRepository(session)
-        self.job_repository = JobRepository(session)
-        self.job_posting_repository = JobPostingRepository(session)
-        self.source_repository = SourceRepository(session)
+        self.company_repository = CompanyRepository(
+            session,
+        )
+        self.job_repository = JobRepository(
+            session,
+        )
+        self.job_posting_repository = (
+            JobPostingRepository(session)
+        )
+        self.source_repository = SourceRepository(
+            session,
+        )
 
     def get_or_create_company(
         self,
@@ -49,7 +59,9 @@ class JobImportService:
             name=company_name,
         )
 
-        return self.company_repository.create(company)
+        return self.company_repository.create(
+            company,
+        )
 
     def get_or_create_job(
         self,
@@ -73,7 +85,9 @@ class JobImportService:
             company=company,
         )
 
-        return self.job_repository.create(job)
+        return self.job_repository.create(
+            job,
+        )
 
     def get_source(
         self,
@@ -105,10 +119,13 @@ class JobImportService:
         Check whether a job posting already exists.
 
         A posting is considered a duplicate when its URL already
-        exists or, when available, its source/external ID already exists.
+        exists or, when available, its source/external ID already
+        exists.
         """
 
-        if self.job_posting_repository.get_by_url(url) is not None:
+        if self.job_posting_repository.get_by_url(
+            url,
+        ) is not None:
             return True
 
         if external_job_id:
@@ -131,6 +148,7 @@ class JobImportService:
         title: str,
         posting_url: str,
         location: str | None = None,
+        work_mode: str | None = None,
         description: str | None = None,
         external_job_id: str | None = None,
         salary: str | None = None,
@@ -146,13 +164,16 @@ class JobImportService:
             title=title,
             posting_url=posting_url,
             location=location,
+            work_mode=work_mode or "UNKNOWN",
             description=description,
             external_job_id=external_job_id,
             salary=salary,
             posted_date=posted_date,
         )
 
-        return self.job_posting_repository.create(posting)
+        return self.job_posting_repository.create(
+            posting,
+        )
 
     def import_job(
         self,
@@ -189,6 +210,7 @@ class JobImportService:
             title=scraped_job.title,
             posting_url=scraped_job.url,
             location=scraped_job.location,
+            work_mode=scraped_job.work_mode,
             description=scraped_job.description,
             external_job_id=scraped_job.external_job_id,
             salary=scraped_job.salary,

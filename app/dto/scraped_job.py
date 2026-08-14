@@ -17,9 +17,10 @@ class ScrapedJob:
 
     company: str
     title: str
-    location: str
+    location: str | None
     url: str
 
+    work_mode: str | None = None
     description: str | None = None
     external_job_id: str | None = None
     salary: str | None = None

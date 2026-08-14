@@ -1,13 +1,17 @@
 """
 Job Discovery Service
 
-Coordinates job discovery connectors and job importing.
+Coordinates job discovery connectors, normalization,
+and job importing.
 """
 
 from sqlalchemy.orm import Session
 
 from app.connectors.registry import create_connector
 from app.services.job_import_service import JobImportService
+from app.services.job_normalization_service import (
+    JobNormalizationService,
+)
 
 
 class JobDiscoveryService:
@@ -16,7 +20,12 @@ class JobDiscoveryService:
     """
 
     def __init__(self, session: Session):
-        self.job_import_service = JobImportService(session)
+        self.job_import_service = JobImportService(
+            session,
+        )
+        self.job_normalization_service = (
+            JobNormalizationService()
+        )
 
     def discover(
         self,
@@ -26,7 +35,7 @@ class JobDiscoveryService:
         connector_kwargs: dict[str, object] | None = None,
     ) -> tuple[int, int]:
         """
-        Fetch jobs from a connector and import them.
+        Fetch, normalize, and import jobs from a connector.
 
         Returns:
             (imported_count, skipped_count)
@@ -42,8 +51,15 @@ class JobDiscoveryService:
         try:
             scraped_jobs = connector.fetch_jobs()
 
+            normalized_jobs = [
+                self.job_normalization_service.normalize(
+                    scraped_job,
+                )
+                for scraped_job in scraped_jobs
+            ]
+
             return self.job_import_service.import_jobs(
-                scraped_jobs=scraped_jobs,
+                scraped_jobs=normalized_jobs,
                 source_name=source_name,
             )
         finally:

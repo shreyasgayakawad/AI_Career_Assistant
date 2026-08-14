@@ -66,6 +66,12 @@ class JobPosting(BaseModel):
         nullable=True,
     )
 
+    work_mode: Mapped[str] = mapped_column(
+        String(20),
+        default="UNKNOWN",
+        nullable=False,
+    )
+
     salary: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,

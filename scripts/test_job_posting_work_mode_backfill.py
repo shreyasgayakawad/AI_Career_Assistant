@@ -4,9 +4,7 @@ Test Job Posting Work Mode Backfill
 Tests location-based work-mode classification.
 """
 
-from scripts.migrate_job_posting_work_mode_backfill import (
-    classify_work_mode,
-)
+from app.services.work_mode_classifier import classify_work_mode
 
 
 def main() -> None:

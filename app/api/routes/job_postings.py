@@ -4,13 +4,12 @@ Job Posting Routes
 API endpoints for individual job postings.
 """
 
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from fastapi import APIRouter, Depends, HTTPException
-
 from app.api.dependencies import get_db
-from app.schemas.job_schema import JobDetailResponse
 from app.models.job_posting import JobPosting
+from app.schemas.job_schema import JobDetailResponse
 
 
 router = APIRouter(
@@ -48,6 +47,7 @@ def get_job_posting(
         title=posting.title,
         company=posting.job.company.name,
         location=posting.location,
+        work_mode=posting.work_mode,
         posting_url=posting.posting_url,
         description=posting.description,
     )

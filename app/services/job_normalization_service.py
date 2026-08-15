@@ -19,6 +19,22 @@ class JobNormalizationService:
         "UNKNOWN",
     }
 
+    WORK_MODE_ALIASES = {
+        "REMOTE": "REMOTE",
+        "REMOTE-FRIENDLY": "REMOTE",
+        "REMOTE FRIENDLY": "REMOTE",
+        "HYBRID": "HYBRID",
+        "HYBRID-FRIENDLY": "HYBRID",
+        "HYBRID FRIENDLY": "HYBRID",
+        "HYBRID (TRAVEL-REQUIRED)": "HYBRID",
+        "HYBRID(TRAVEL-REQUIRED)": "HYBRID",
+        "ON-SITE": "ONSITE",
+        "ON SITE": "ONSITE",
+        "ONSITE": "ONSITE",
+        "IN-OFFICE": "ONSITE",
+        "IN OFFICE": "ONSITE",
+    }
+
     @staticmethod
     def _normalize_required(value: str) -> str:
         return value.strip()
@@ -40,7 +56,7 @@ class JobNormalizationService:
         value: str | None,
     ) -> str:
         """
-        Normalize work mode to a supported value.
+        Normalize an explicit work-mode value.
 
         Missing, blank, or unsupported values become UNKNOWN.
         """
@@ -48,15 +64,15 @@ class JobNormalizationService:
         if value is None:
             return "UNKNOWN"
 
-        value = value.strip().upper()
+        normalized = value.strip().upper()
 
-        if not value:
+        if not normalized:
             return "UNKNOWN"
 
-        if value not in cls.ALLOWED_WORK_MODES:
-            return "UNKNOWN"
-
-        return value
+        return cls.WORK_MODE_ALIASES.get(
+            normalized,
+            "UNKNOWN",
+        )
 
     def normalize(
         self,

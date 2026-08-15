@@ -4,9 +4,8 @@ Job Routes
 API endpoints for job search.
 """
 
-from sqlalchemy.orm import Session
-
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
 from app.schemas.job_schema import (
@@ -29,20 +28,30 @@ router = APIRouter(
 def get_jobs(
     keyword: str | None = None,
     company: str | None = None,
+    work_mode: str | None = None,
     session: Session = Depends(get_db),
 ) -> list[JobSummaryResponse]:
     """
     Retrieve available job postings.
 
     Already-applied postings are excluded.
+
+    Work mode is an optional exact-match filter.
     """
 
     service = JobSearchService(session)
 
-    postings = service.search_available_postings(
-        keyword=keyword,
-        company_name=company,
-    )
+    try:
+        postings = service.search_available_postings(
+            keyword=keyword,
+            company_name=company,
+            work_mode=work_mode,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
 
     return [
         JobSummaryResponse(
@@ -51,6 +60,7 @@ def get_jobs(
             title=posting.title,
             company=posting.job.company.name,
             location=posting.location,
+            work_mode=posting.work_mode,
             posting_url=posting.posting_url,
         )
         for posting in postings
@@ -100,6 +110,7 @@ def get_job(
         title=posting.title,
         company=job.company.name,
         location=posting.location,
+        work_mode=posting.work_mode,
         posting_url=posting.posting_url,
         description=posting.description,
     )

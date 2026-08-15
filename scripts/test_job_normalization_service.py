@@ -16,7 +16,7 @@ def main() -> None:
     service = JobNormalizationService()
 
     # ---------------------------------------------------------------
-    # Test 1: Hybrid work mode.
+    # Test 1: Hybrid
     # ---------------------------------------------------------------
 
     hybrid_job = ScrapedJob(
@@ -48,34 +48,15 @@ def main() -> None:
     assert normalized_hybrid.salary == "$150,000"
 
     # ---------------------------------------------------------------
-    # Test 2: Remote work mode with no location.
-    # ---------------------------------------------------------------
-
-    remote_job = ScrapedJob(
-        company="Company",
-        title="Remote Engineer",
-        location=None,
-        url="https://example.com/remote",
-        work_mode="remote",
-    )
-
-    normalized_remote = service.normalize(
-        remote_job,
-    )
-
-    assert normalized_remote.location is None
-    assert normalized_remote.work_mode == "REMOTE"
-
-    # ---------------------------------------------------------------
-    # Test 3: On-site work mode.
+    # Test 2: Greenhouse On-Site
     # ---------------------------------------------------------------
 
     onsite_job = ScrapedJob(
-        company="Company",
-        title="Onsite Engineer",
-        location="New York, NY",
+        company="Anthropic",
+        title="AI Compliance Officer",
+        location="Dublin, IE",
         url="https://example.com/onsite",
-        work_mode="onsite",
+        work_mode="On-Site",
     )
 
     normalized_onsite = service.normalize(
@@ -85,69 +66,114 @@ def main() -> None:
     assert normalized_onsite.work_mode == "ONSITE"
 
     # ---------------------------------------------------------------
-    # Test 4: Missing work mode becomes UNKNOWN.
+    # Test 3: Remote
     # ---------------------------------------------------------------
 
-    missing_mode_job = ScrapedJob(
+    remote_job = ScrapedJob(
+        company="Anthropic",
+        title="Software Engineer",
+        location="Remote",
+        url="https://example.com/remote",
+        work_mode="Remote",
+    )
+
+    normalized_remote = service.normalize(
+        remote_job,
+    )
+
+    assert normalized_remote.work_mode == "REMOTE"
+
+    # ---------------------------------------------------------------
+    # Test 4: Supported work-mode aliases
+    # ---------------------------------------------------------------
+
+    aliases = {
+        "REMOTE-FRIENDLY": "REMOTE",
+        "REMOTE FRIENDLY": "REMOTE",
+        "HYBRID-FRIENDLY": "HYBRID",
+        "HYBRID FRIENDLY": "HYBRID",
+        "HYBRID (TRAVEL-REQUIRED)": "HYBRID",
+        "HYBRID(TRAVEL-REQUIRED)": "HYBRID",
+        "ON SITE": "ONSITE",
+        "ONSITE": "ONSITE",
+        "IN-OFFICE": "ONSITE",
+        "IN OFFICE": "ONSITE",
+    }
+
+    for raw_value, expected_value in aliases.items():
+        normalized = service._normalize_work_mode(
+            raw_value,
+        )
+
+        assert normalized == expected_value, (
+            f"{raw_value!r} should normalize to "
+            f"{expected_value!r}, got {normalized!r}"
+        )
+
+    # ---------------------------------------------------------------
+    # Test 5: Missing work mode
+    # ---------------------------------------------------------------
+
+    missing_work_mode = ScrapedJob(
         company="Company",
-        title="Unknown Mode Engineer",
-        location=None,
+        title="Title",
+        location="Location",
         url="https://example.com/missing",
         work_mode=None,
     )
 
     normalized_missing = service.normalize(
-        missing_mode_job,
+        missing_work_mode,
     )
 
     assert normalized_missing.work_mode == "UNKNOWN"
 
     # ---------------------------------------------------------------
-    # Test 5: Blank work mode becomes UNKNOWN.
+    # Test 6: Blank work mode
     # ---------------------------------------------------------------
 
-    blank_mode_job = ScrapedJob(
+    blank_work_mode = ScrapedJob(
         company="Company",
-        title="Blank Mode Engineer",
-        location="Remote",
+        title="Title",
+        location="Location",
         url="https://example.com/blank",
         work_mode="   ",
     )
 
     normalized_blank = service.normalize(
-        blank_mode_job,
+        blank_work_mode,
     )
 
     assert normalized_blank.work_mode == "UNKNOWN"
 
     # ---------------------------------------------------------------
-    # Test 6: Unsupported work mode becomes UNKNOWN.
+    # Test 7: Invalid work mode
     # ---------------------------------------------------------------
 
-    unsupported_mode_job = ScrapedJob(
+    invalid_work_mode = ScrapedJob(
         company="Company",
-        title="Unsupported Mode Engineer",
-        location="Somewhere",
-        url="https://example.com/unsupported",
-        work_mode="flexible",
+        title="Title",
+        location="Location",
+        url="https://example.com/invalid",
+        work_mode="Something Else",
     )
 
-    normalized_unsupported = service.normalize(
-        unsupported_mode_job,
+    normalized_invalid = service.normalize(
+        invalid_work_mode,
     )
 
-    assert normalized_unsupported.work_mode == "UNKNOWN"
+    assert normalized_invalid.work_mode == "UNKNOWN"
 
     # ---------------------------------------------------------------
-    # Test 7: Optional text fields become None when blank.
+    # Test 8: Optional fields
     # ---------------------------------------------------------------
 
     empty_fields = ScrapedJob(
         company="Company",
         title="Title",
-        location="   ",
-        url="https://example.com/empty",
-        work_mode="REMOTE",
+        location="Location",
+        url="https://example.com",
+        work_mode="HYBRID",
         description="   ",
         external_job_id="   ",
         salary="   ",
@@ -157,13 +183,14 @@ def main() -> None:
         empty_fields,
     )
 
-    assert normalized_empty.location is None
     assert normalized_empty.description is None
     assert normalized_empty.external_job_id is None
     assert normalized_empty.salary is None
-    assert normalized_empty.work_mode == "REMOTE"
+    assert normalized_empty.work_mode == "HYBRID"
 
-    print("Job normalization service test passed.")
+    print(
+        "Job normalization service test passed."
+    )
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ Integration test for retrieving an individual job posting.
 """
 
 # Register all SQLAlchemy models.
+
 import app.models  # noqa: F401
 
 from fastapi import HTTPException
@@ -21,9 +22,9 @@ def main() -> None:
     session = SessionLocal()
 
     try:
-        print("=" * 50)
+        print("=" * 60)
         print("Job Posting API Test")
-        print("=" * 50)
+        print("=" * 60)
 
         posting_id = 179
 
@@ -49,6 +50,9 @@ def main() -> None:
             f"Location   : {posting.location}"
         )
         print(
+            f"Work Mode  : {posting.work_mode}"
+        )
+        print(
             f"URL        : {posting.posting_url}"
         )
 
@@ -58,12 +62,18 @@ def main() -> None:
                 "requested posting ID."
             )
 
+        if not posting.work_mode:
+            raise RuntimeError(
+                "Returned posting has no work mode."
+            )
+
         print()
         print(
             "Posting Retrieval : Passed"
         )
 
         # Test a posting that does not exist.
+
         invalid_posting_id = 999999999
 
         try:

@@ -62,6 +62,7 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         *,
         keyword: str | None = None,
         company: Company | None = None,
+        work_mode: str | None = None,
         exclude_applied: bool = True,
     ) -> list[JobPosting]:
         """
@@ -69,6 +70,8 @@ class JobPostingRepository(BaseRepository[JobPosting]):
 
         By default, postings that already have an application
         are excluded.
+
+        Work mode filtering uses exact matching.
         """
 
         statement = (
@@ -84,6 +87,11 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         if company is not None:
             statement = statement.where(
                 Job.company_id == company.id,
+            )
+
+        if work_mode is not None:
+            statement = statement.where(
+                JobPosting.work_mode == work_mode,
             )
 
         if keyword:

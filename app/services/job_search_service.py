@@ -19,6 +19,13 @@ class JobSearchService:
     Business service for searching jobs and job postings.
     """
 
+    ALLOWED_WORK_MODES = {
+        "REMOTE",
+        "HYBRID",
+        "ONSITE",
+        "UNKNOWN",
+    }
+
     def __init__(self, session: Session):
         self.job_repository = JobRepository(session)
         self.job_posting_repository = JobPostingRepository(session)
@@ -85,9 +92,12 @@ class JobSearchService:
         *,
         keyword: str | None = None,
         company_name: str | None = None,
+        work_mode: str | None = None,
     ) -> list[JobPosting]:
         """
         Search active job postings that have not been applied to.
+
+        Work mode is an optional exact-match filter.
         """
 
         company: Company | None = None
@@ -100,8 +110,17 @@ class JobSearchService:
             if company is None:
                 return []
 
+        if work_mode is not None:
+            work_mode = work_mode.strip().upper()
+
+            if work_mode not in self.ALLOWED_WORK_MODES:
+                raise ValueError(
+                    f"Invalid work mode: {work_mode}"
+                )
+
         return self.job_posting_repository.search(
             keyword=keyword,
             company=company,
+            work_mode=work_mode,
             exclude_applied=True,
         )

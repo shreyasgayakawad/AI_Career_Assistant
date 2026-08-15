@@ -17,6 +17,7 @@ class JobSummaryResponse(BaseModel):
     title: str
     company: str
     location: str | None
+    work_mode: str
     posting_url: str
 
     model_config = ConfigDict(
@@ -34,6 +35,7 @@ class JobDetailResponse(BaseModel):
     title: str
     company: str
     location: str | None
+    work_mode: str
     posting_url: str
     description: str | None
 

@@ -5,6 +5,7 @@ Discovers and executes all test scripts under the `scripts/` directory as Python
 Provides a comprehensive summary of passed/failed tests and exits with code 0 on success.
 """
 
+import os
 import subprocess
 import sys
 import time
@@ -27,6 +28,14 @@ def main() -> None:
     failed_tests = []
     start_total_time = time.time()
 
+    # Force child processes to use UTF-8 for stdout/stderr regardless of the
+    # host console's codepage. Without this, non-ASCII characters (e.g. job
+    # postings with accented text from international sources) raise
+    # UnicodeEncodeError inside the child process before output ever
+    # reaches this parent process.
+    child_env = os.environ.copy()
+    child_env["PYTHONIOENCODING"] = "utf-8"
+
     for test_file in test_files:
         module_name = f"scripts.{test_file.stem}"
         start_time = time.time()
@@ -35,6 +44,9 @@ def main() -> None:
             [sys.executable, "-m", module_name],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=child_env,
         )
         duration = time.time() - start_time
 

@@ -9,6 +9,7 @@ from app.connectors.registry import (
     create_connector,
     get_connector_class,
 )
+from app.connectors.smartrecruiters_connector import SmartRecruitersConnector
 
 
 def main() -> None:
@@ -44,6 +45,17 @@ def main() -> None:
     assert isinstance(ashby_connector, AshbyConnector)
     assert ashby_connector.company == "linear"
     ashby_connector.close()
+
+    # ---------------------------------------------------------
+    # SmartRecruiters Scraper
+    # ---------------------------------------------------------
+    sr_class = get_connector_class("smartrecruiters_scraper")
+    assert sr_class is SmartRecruitersConnector
+
+    sr_connector = create_connector("smartrecruiters_scraper", company="continental")
+    assert isinstance(sr_connector, SmartRecruitersConnector)
+    assert sr_connector.company == "continental"
+    sr_connector.close()
 
     # ---------------------------------------------------------
     # Error Handling

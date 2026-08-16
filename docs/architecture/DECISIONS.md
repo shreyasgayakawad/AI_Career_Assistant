@@ -90,4 +90,5 @@ A standardized test runner is provided via `scripts/run_all_tests.py` (executed 
 
 ### Consequences
 - Fast regression testing across the entire platform in a single command.
--
+- Direct compatibility with standard CI/CD pipelines.
+- Test scripts are subprocess-isolated with `PYTHONIOENCODING=utf-8` forced on the child environment, since non-ASCII job data (e.g. international postings) previously caused `UnicodeEncodeError` failures under Windows' default console codepage.

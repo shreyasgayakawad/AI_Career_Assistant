@@ -47,69 +47,73 @@ def main() -> None:
     )
 
     # ---------------------------------------------------------
-    # Feature flag.
+    # Feature flag handling.
     # ---------------------------------------------------------
 
-    if LINKEDIN_ENABLED:
-        raise RuntimeError(
-            "LinkedIn should be disabled during this test."
+    if not LINKEDIN_ENABLED:
+        print(
+            "LinkedIn Feature Flag : Disabled (Testing Disabled Handling)"
         )
 
-    print(
-        "LinkedIn Feature Flag : Passed"
-    )
-
-    # ---------------------------------------------------------
-    # Connect while disabled.
-    # ---------------------------------------------------------
-
-    try:
-        portal.connect()
-
-        raise RuntimeError(
-            "LinkedIn connection succeeded while disabled."
-        )
-
-    except RuntimeError as exc:
-        expected_message = (
-            "LinkedIn integration is disabled."
-        )
-
-        if str(exc) != expected_message:
+        try:
+            portal.connect()
             raise RuntimeError(
-                "Unexpected LinkedIn connection error: "
-                f"{exc}"
-            ) from exc
+                "LinkedIn connection succeeded while disabled."
+            )
+        except RuntimeError as exc:
+            expected_message = "LinkedIn integration is disabled."
+            if str(exc) != expected_message:
+                raise RuntimeError(
+                    f"Unexpected LinkedIn connection error: {exc}"
+                ) from exc
 
-    print(
-        "Disabled Connection Rejected : Passed"
-    )
-
-    # ---------------------------------------------------------
-    # Disconnect while disabled.
-    # ---------------------------------------------------------
-
-    try:
-        portal.disconnect()
-
-        raise RuntimeError(
-            "LinkedIn disconnection succeeded while disabled."
+        print(
+            "Disabled Connection Rejected : Passed"
         )
 
-    except RuntimeError as exc:
-        expected_message = (
-            "LinkedIn integration is disabled."
-        )
-
-        if str(exc) != expected_message:
+        try:
+            portal.disconnect()
             raise RuntimeError(
-                "Unexpected LinkedIn disconnection error: "
-                f"{exc}"
-            ) from exc
+                "LinkedIn disconnection succeeded while disabled."
+            )
+        except RuntimeError as exc:
+            expected_message = "LinkedIn integration is disabled."
+            if str(exc) != expected_message:
+                raise RuntimeError(
+                    f"Unexpected LinkedIn disconnection error: {exc}"
+                ) from exc
 
-    print(
-        "Disabled Disconnection Rejected : Passed"
-    )
+        print(
+            "Disabled Disconnection Rejected : Passed"
+        )
+    else:
+        print(
+            "LinkedIn Feature Flag : Enabled (Testing Enabled Handling)"
+        )
+
+        try:
+            portal.connect()
+            raise RuntimeError(
+                "LinkedIn connection should raise NotImplementedError when enabled."
+            )
+        except NotImplementedError:
+            pass
+
+        print(
+            "Enabled Connection NotImplemented : Passed"
+        )
+
+        try:
+            portal.disconnect()
+            raise RuntimeError(
+                "LinkedIn disconnection should raise NotImplementedError when enabled."
+            )
+        except NotImplementedError:
+            pass
+
+        print(
+            "Enabled Disconnection NotImplemented : Passed"
+        )
 
     print()
     print(

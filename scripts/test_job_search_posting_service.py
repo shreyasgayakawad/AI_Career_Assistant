@@ -46,7 +46,7 @@ def main() -> None:
 
         # Make sure no applied posting is returned.
         for posting in postings:
-            if posting.application is not None:
+            if len(posting.applications) > 0:
                 raise RuntimeError(
                     "An applied posting was returned."
                 )

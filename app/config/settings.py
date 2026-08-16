@@ -5,10 +5,39 @@ Loads configuration from environment variables.
 """
 
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# ---------------------------------------------------------------------------
+# Environment File Resolution
+# ---------------------------------------------------------------------------
+# Priority order:
+# 1. Explicit path in ENV_FILE environment variable (if defined)
+# 2. Sibling directory '../AI_Career_Assistant_key/.env' (isolated secret storage)
+# 3. Project root '.env'
+# 4. Default parent directory traversal
+
+_env_loaded = False
+_custom_env_path = os.getenv("ENV_FILE")
+
+if _custom_env_path and Path(_custom_env_path).is_file():
+    load_dotenv(dotenv_path=Path(_custom_env_path))
+    _env_loaded = True
+else:
+    _project_root = Path(__file__).resolve().parents[2]
+    _candidate_paths = [
+        _project_root.parent / "AI_Career_Assistant_key" / ".env",
+        _project_root / ".env",
+    ]
+    for _candidate in _candidate_paths:
+        if _candidate.is_file():
+            load_dotenv(dotenv_path=_candidate)
+            _env_loaded = True
+            break
+
+if not _env_loaded:
+    load_dotenv()
 
 
 # ---------------------------------------------------------------------------

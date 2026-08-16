@@ -11,18 +11,32 @@ import app.models  # noqa: F401
 from app.database.session import SessionLocal
 from app.models.application import Application
 from app.models.job_posting import JobPosting
+from app.models.user import User
 from app.repositories.application_repository import ApplicationRepository
 
 
 def main() -> None:
     """
-    Test creating and retrieving an application.
+    Test creating and retrieving an application for a specific user.
     """
 
     session = SessionLocal()
 
     try:
         application_repository = ApplicationRepository(session)
+
+        # Ensure a test user exists
+        test_email = "test_app_repo@example.com"
+        user = session.query(User).filter(User.email == test_email).first()
+        if not user:
+            user = User(
+                name="Test App Repo User",
+                email=test_email,
+                password_hash="test_hash",
+            )
+            session.add(user)
+            session.commit()
+            session.refresh(user)
 
         posting = session.query(JobPosting).first()
 
@@ -36,19 +50,22 @@ def main() -> None:
         print("Application Repository Test")
         print("=" * 50)
 
+        print(f"User ID        : {user.id}")
         print(f"Job Posting ID : {posting.id}")
         print(f"Job Title      : {posting.title}")
         print(f"Posting URL    : {posting.posting_url}")
 
         existing_application = (
-            application_repository.get_by_job_posting_id(
-                posting.id,
+            application_repository.get_by_user_and_job_posting(
+                user_id=user.id,
+                job_posting_id=posting.id,
             )
         )
 
         if existing_application is None:
             application = Application(
-                job_posting=posting,
+                user_id=user.id,
+                job_posting_id=posting.id,
             )
 
             application = application_repository.create(
@@ -67,8 +84,9 @@ def main() -> None:
             )
 
         loaded_application = (
-            application_repository.get_by_job_posting_id(
-                posting.id,
+            application_repository.get_by_user_and_job_posting(
+                user_id=user.id,
+                job_posting_id=posting.id,
             )
         )
 
@@ -83,11 +101,13 @@ def main() -> None:
             f"{loaded_application.id}"
         )
 
-        applications = application_repository.get_all()
+        applications = application_repository.get_all_for_user(
+            user_id=user.id,
+        )
 
         print()
         print(
-            f"Total Applications       : "
+            f"Total User Applications  : "
             f"{len(applications)}"
         )
 

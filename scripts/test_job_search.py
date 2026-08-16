@@ -36,7 +36,7 @@ def main() -> None:
 
         keyword = "Engineer"
 
-        jobs = repository.search(keyword)
+        jobs = repository.search(keyword=keyword)
 
         print(f"Search Results for '{keyword}'")
         print("-" * 50)
@@ -48,6 +48,8 @@ def main() -> None:
                 print(f"{index}. {job.company.name}")
                 print(f"   {job.title}")
                 print()
+
+        print("Job search test passed.")
 
     finally:
         session.close()

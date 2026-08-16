@@ -6,12 +6,16 @@ Maps configured scraper names to connector implementations.
 
 from typing import Any
 
+from app.connectors.ashby_connector import AshbyConnector
 from app.connectors.base_connector import BaseConnector
 from app.connectors.greenhouse_connector import GreenhouseConnector
+from app.connectors.lever_connector import LeverConnector
 
 
 _CONNECTORS: dict[str, type[BaseConnector]] = {
     "greenhouse_scraper": GreenhouseConnector,
+    "lever_scraper": LeverConnector,
+    "ashby_scraper": AshbyConnector,
 }
 
 

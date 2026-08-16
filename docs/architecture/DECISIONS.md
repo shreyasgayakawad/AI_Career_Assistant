@@ -56,16 +56,38 @@ During Phase 1 (Foundation & Stabilization), schema migrations are handled using
 - **Phase 1 (Current):** Retain and maintain the verified idempotent migration scripts under `scripts/migrate_*.py`.
 - **Phase 2+ (Roadmap Trigger):** Adopt Alembic when expanding to multi-source ingestion (Phase 2) or migrating from SQLite to PostgreSQL for multi-user production hosting.
 
+### Consequences
+- Fast, dependency-free migrations during early, rapidly-changing schema phases.
+- Revisit trigger conditions explicitly once either roadmap milestone is reached (see Addendum below).
+
+### Addendum (Phase 2 completion): Trigger Hit, Decision Deferred
+
+**Status:** Deferred to Phase 4
+
+The Phase 2+ roadmap trigger has two conditions, joined by "or":
+1. **Multi-source ingestion** — Lever, Ashby, and SmartRecruiters have shipped. **Trigger hit.**
+2. **PostgreSQL / multi-user production hosting** — still on SQLite, single local user. **Trigger not hit.**
+
+**Nuance:** adding the three new sources required **zero schema changes**. No new migration script ran, no `ALTER TABLE`, no new column. The existing `Source`/`Job`/`JobPosting` model already handled "multiple sources" generically via `source_id` — that's the design paying off as intended. While the trigger's letter was technically satisfied, the actual justification for Alembic (schema-change complexity getting hard to track by hand) hasn't materialized yet in this codebase.
+
+**Tradeoffs considered:**
+- *For adopting now:* setting Alembic up while the schema is simple is easier than retrofitting later; the current manual-script approach is somewhat fragile (no version tracking beyond each script's own inspection check); Alembic is free and open-source (BSD-licensed), no cost concern.
+- *For deferring:* introducing Alembic now means an "empty" adoption — `alembic init` and a baseline revision matching current state, but no real migration to actually write yet. The next genuine schema-change trigger is Phase 4 (structured candidate profile — turning free-text skills/experience into real relational tables), a more natural, concrete moment to introduce it alongside an actual meaningful migration rather than a synthetic one.
+
+**Decision:** defer Alembic adoption until Phase 4, when a real schema change naturally exists to pair it with.
+
+**Consequence:** the 6 existing `scripts/migrate_*.py` files remain in place with no version tracking beyond each script's own inspection checks, until Phase 4 introduces Alembic alongside its first real migration.
+
 ---
 
 ## ADR 004: Test Suite Standardization
 
 ### Context
-The repository houses 36 modular test suites under `scripts/test_*.py` that test connectors, normalization, repositories, services, and API routes.
+The repository houses modular test suites under `scripts/test_*.py` that test connectors, normalization, repositories, services, and API routes.
 
 ### Decision
 A standardized test runner is provided via `scripts/run_all_tests.py` (executed as `python -m scripts.run_all_tests` or `.\venv\Scripts\python.exe -m scripts.run_all_tests`), discovering all `test_*.py` modules, running them in isolated sub-processes, timing execution, and reporting a consolidated pass/fail summary.
 
 ### Consequences
-- Fast regression testing across the entire platform in a single command (~30s).
-- Direct compatibility with standard CI/CD pipelines.
+- Fast regression testing across the entire platform in a single command.
+-

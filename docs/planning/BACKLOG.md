@@ -59,6 +59,17 @@ The following capabilities have already been implemented and are no longer activ
 - [x] Candidate profile database migration
 - [x] Candidate profile tests
 
+## Multi-Source Job Discovery
+
+- [x] Lever connector (verified live: 308 postings, palantir board)
+- [x] Ashby connector (verified live: 33 postings, linear board)
+- [x] SmartRecruiters connector (verified live: 941 postings across pagination, continental board)
+- [x] Job normalization enforced for all sources via `JobDiscoveryService`
+- [x] Duplicate detection verified across all new connectors (fresh import + no-op re-run)
+- [x] Remote-job / work-mode filtering (`REMOTE`/`HYBRID`/`ONSITE`/`UNKNOWN`) across all sources
+- [x] Generic `scripts/import_jobs.py` replacing per-source import scripts
+- [x] Fixed a `UnicodeEncodeError` in the test runner surfaced by non-English job postings (SmartRecruiters/Continental)
+
 ---
 
 # Epic 3 - Core Backend
@@ -84,15 +95,20 @@ The following capabilities have already been implemented and are no longer activ
 
 ## Technical Tasks
 
-- [ ] LinkedIn job scraper
-- [ ] Indeed job scraper
-- [ ] Wellfound job scraper
-- [ ] RemoteOK scraper
-- [ ] Company careers scraper
-- [ ] Job normalization
-- [ ] Duplicate detection
-- [ ] Advanced search filters
-- [ ] Remote-job filtering
+- [x] Job normalization
+- [x] Duplicate detection
+- [x] Remote-job filtering
+- [x] Company careers scraper — delivered as four connectors (Greenhouse, Lever, Ashby, SmartRecruiters) rather than a single generic scraper, since each ATS platform has its own API shape
+- [ ] Advanced search filters — moved to Epic 4 follow-up / Phase 3 scope (see below)
+
+## Deferred / Not Planned
+
+- [ ] **Workday connector** — investigated; requires POST requests with a JSON body and a `tenant`/`site`/`wd_server` triplet instead of a single `company` parameter, unlike the four sources already implemented. Scoped as its own future task, not blocking further work.
+- [ ] **Naukri scraper** — deferred until candidate profile and matching are further along.
+- [ ] **RemoteOK scraper** — deferred, same reasoning as Naukri.
+- [ ] **LinkedIn job scraper** — not planned. No public jobs API exists; scraping would violate LinkedIn's Terms of Service. Would require an official Talent Solutions partnership, which is a business decision outside engineering scope.
+- [ ] **Indeed job scraper** — not currently planned; revisit if/when a legitimate public API path is identified.
+- [ ] **Wellfound scraper** — not currently planned, same reasoning as Indeed.
 
 ---
 

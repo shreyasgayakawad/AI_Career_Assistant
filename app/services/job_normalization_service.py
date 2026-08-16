@@ -98,6 +98,12 @@ class JobNormalizationService:
             work_mode=self._normalize_work_mode(
                 scraped_job.work_mode,
             ),
+            employment_type=self._normalize_optional(
+                scraped_job.employment_type,
+            ),
+            experience_level=self._normalize_optional(
+                scraped_job.experience_level,
+            ),
             description=self._normalize_optional(
                 scraped_job.description,
             ),

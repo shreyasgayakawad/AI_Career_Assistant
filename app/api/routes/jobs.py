@@ -29,6 +29,11 @@ def get_jobs(
     keyword: str | None = None,
     company: str | None = None,
     work_mode: str | None = None,
+    location: str | None = None,
+    posted_after: str | None = None,
+    has_salary: bool | None = None,
+    employment_type: str | None = None,
+    experience_level: str | None = None,
     session: Session = Depends(get_db),
 ) -> list[JobSummaryResponse]:
     """
@@ -37,6 +42,12 @@ def get_jobs(
     Already-applied postings are excluded.
 
     Work mode is an optional exact-match filter.
+    Location is an optional case-insensitive partial-match filter.
+    Posted-after is an optional ISO date filter (e.g. ?posted_after=2026-08-01).
+    Has-salary is an optional boolean filter: true = has salary data, false = no salary data.
+    Employment type is an optional exact-match filter.
+    Experience level is an optional exact-match filter.
+    Invalid date format returns HTTP 400.
     """
 
     service = JobSearchService(session)
@@ -46,6 +57,11 @@ def get_jobs(
             keyword=keyword,
             company_name=company,
             work_mode=work_mode,
+            location=location,
+            posted_after=posted_after,
+            has_salary=has_salary,
+            employment_type=employment_type,
+            experience_level=experience_level,
         )
     except ValueError as exc:
         raise HTTPException(

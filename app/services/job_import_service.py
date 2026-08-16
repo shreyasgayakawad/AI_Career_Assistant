@@ -67,9 +67,15 @@ class JobImportService:
         self,
         title: str,
         company: Company,
+        employment_type: str | None = None,
+        experience_level: str | None = None,
     ) -> Job:
         """
         Retrieve an existing job or create a new one.
+
+        If the job is newly created, the supplied
+        ``employment_type`` and ``experience_level`` are set
+        once and never overwritten by later imports.
         """
 
         job = self.job_repository.get_by_company_and_title(
@@ -84,6 +90,12 @@ class JobImportService:
             title=title,
             company=company,
         )
+
+        if employment_type is not None:
+            job.employment_type = employment_type
+
+        if experience_level is not None:
+            job.experience_level = experience_level
 
         return self.job_repository.create(
             job,
@@ -202,6 +214,8 @@ class JobImportService:
         job = self.get_or_create_job(
             title=scraped_job.title,
             company=company,
+            employment_type=scraped_job.employment_type,
+            experience_level=scraped_job.experience_level,
         )
 
         return self.create_job_posting(

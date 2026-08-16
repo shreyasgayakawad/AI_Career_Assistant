@@ -4,6 +4,8 @@ Job Posting Repository
 Repository for JobPosting database operations.
 """
 
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -63,6 +65,11 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         keyword: str | None = None,
         company: Company | None = None,
         work_mode: str | None = None,
+        location: str | None = None,
+        posted_after: datetime | None = None,
+        has_salary: bool | None = None,
+        employment_type: str | None = None,
+        experience_level: str | None = None,
         exclude_applied: bool = True,
     ) -> list[JobPosting]:
         """
@@ -72,6 +79,9 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         are excluded.
 
         Work mode filtering uses exact matching.
+        Location filtering uses case-insensitive partial match.
+        Posted-after filtering uses ISO date string (e.g. ?posted_after=2026-08-01).
+        Has-salary filtering: True = postings with salary data, False = without.
         """
 
         statement = (
@@ -92,6 +102,36 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         if work_mode is not None:
             statement = statement.where(
                 JobPosting.work_mode == work_mode,
+            )
+
+        if location:
+            statement = statement.where(
+                JobPosting.location.ilike(f"%{location}%"),
+            )
+
+        if posted_after:
+            statement = statement.where(
+                JobPosting.posted_date >= posted_after,
+            )
+
+        if has_salary is not None:
+            if has_salary:
+                statement = statement.where(
+                    JobPosting.salary.isnot(None),
+                )
+            else:
+                statement = statement.where(
+                    JobPosting.salary.is_(None),
+                )
+
+        if employment_type is not None:
+            statement = statement.where(
+                Job.employment_type == employment_type,
+            )
+
+        if experience_level is not None:
+            statement = statement.where(
+                Job.experience_level == experience_level,
             )
 
         if keyword:

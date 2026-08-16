@@ -21,6 +21,8 @@ class ScrapedJob:
     url: str
 
     work_mode: str | None = None
+    employment_type: str | None = None
+    experience_level: str | None = None
     description: str | None = None
     external_job_id: str | None = None
     salary: str | None = None

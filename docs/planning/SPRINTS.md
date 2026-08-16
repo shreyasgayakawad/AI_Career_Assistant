@@ -37,7 +37,7 @@ Synchronize planning documents with the implemented system and complete remainin
 
 # Sprint 3.2 — Job Discovery Expansion
 
-**Status:** Planned
+**Status:** Completed
 
 **Epic:** Epic 4 — Job Discovery Engine
 
@@ -45,14 +45,21 @@ Synchronize planning documents with the implemented system and complete remainin
 
 Expand job discovery beyond the currently implemented job search and posting workflow.
 
-## Candidate Tasks
+## Completed Tasks
 
-- [ ] Define job source connector interface
-- [ ] Implement source-specific job discovery
-- [ ] Normalize discovered jobs
-- [ ] Detect duplicate jobs
-- [ ] Add remote-job filtering
-- [ ] Improve advanced search filters
+- [x] Define job source connector interface (`BaseConnector`, already in place; new sources registered via `app/connectors/registry.py`)
+- [x] Implement source-specific job discovery — added Lever, Ashby, and SmartRecruiters connectors alongside the existing Greenhouse connector
+- [x] Normalize discovered jobs — all connectors now route through `JobNormalizationService` via `JobDiscoveryService`; retired a per-source import script (`scripts/import_greenhouse_jobs.py`) that had bypassed normalization entirely
+- [x] Detect duplicate jobs — verified for all three new connectors via a fresh import followed by an immediate no-op re-run (posting URL + source/external-ID dedup confirmed working)
+- [x] Add remote-job filtering — `work_mode` filtering (`REMOTE`/`HYBRID`/`ONSITE`/`UNKNOWN`) now applies consistently across all four connected sources
+- [x] Added a single generic `scripts/import_jobs.py` (`--scraper`, `--source`, `--company`) replacing per-source import scripts
+
+## Deferred (explicitly out of scope for this sprint)
+
+- [ ] **Workday** — investigated; API is meaningfully more complex than the other sources (POST-based with a JSON body, no fixed datacenter number across tenants, requires `tenant`/`site`/`wd_server` instead of a single `company` parameter). Revisit as its own scoped task.
+- [ ] **Naukri, RemoteOK** — deferred until the core app (candidate profile, matching) is further along, per product decision.
+- [ ] **LinkedIn, Wellfound** — no public jobs API exists for either; LinkedIn access would require an official Talent Solutions partnership (a business decision, not an engineering one) rather than scraping, which would violate their Terms of Service. Not currently planned.
+- [ ] **Improve advanced search filters** (salary, employment type, experience level, posted date, skills) — moved to Phase 3 scope; not part of this sprint.
 
 ---
 

@@ -4,10 +4,14 @@ Candidate Profile Model
 Represents the career profile belonging to an application user.
 """
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import Date, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base_model import BaseModel
+
+from app.models.candidate_skill import CandidateSkill
+from app.models.candidate_education import CandidateEducation
+from app.models.candidate_work_experience import CandidateWorkExperience
 
 
 class CandidateProfile(BaseModel):
@@ -51,6 +55,20 @@ class CandidateProfile(BaseModel):
     education: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
+    )
+
+    # Structured relationships (new in Phase 4):
+    # These provide ORM-level navigation from a profile to its structured entries.
+    # The child models hold the foreign key; no back_populates is needed on
+    # the profile side so as not to disturb the existing model registries.
+    skills_list: Mapped[list["CandidateSkill"]] = relationship(
+        cascade="all, delete-orphan",
+    )
+    work_experiences: Mapped[list["CandidateWorkExperience"]] = relationship(
+        cascade="all, delete-orphan",
+    )
+    education_entries: Mapped[list["CandidateEducation"]] = relationship(
+        cascade="all, delete-orphan",
     )
 
     user: Mapped["User"] = relationship(

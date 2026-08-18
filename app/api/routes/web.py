@@ -547,6 +547,111 @@ def dashboard_profile_page(
     experience = escape(profile.experience or "")
     education = escape(profile.education or "")
 
+    # ---------------------------------------------------------
+    # Structured entries (Phase 4): skills, work experience,
+    # education. Rendered alongside the free-text fields above,
+    # which remain the source of truth for the plain-text
+    # summary fields per the Phase 4 decision to keep both.
+    # ---------------------------------------------------------
+
+    skills_list = profile.skills_list or []
+    skills_items: list[str] = []
+
+    for skill in skills_list:
+        skills_items.append(
+            f"""
+            <div style="background: #f1f3f5; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
+              {escape(skill.name)}
+              <form
+                method="post"
+                action="/dashboard/profile/skills/{skill.id}/delete"
+                style="display: inline;">
+                <button
+                  type="submit"
+                  style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 12px; margin-left: 8px;">
+                  &times;
+                </button>
+              </form>
+            </div>
+            """
+        )
+
+    skills_html = "".join(skills_items)
+
+    work_experience_list = profile.work_experiences or []
+    we_items: list[str] = []
+
+    for we in work_experience_list:
+        dates = ""
+
+        if we.start_date:
+            dates += we.start_date.strftime("%Y-%m-%d")
+
+        if we.end_date:
+            if dates:
+                dates += " &mdash; "
+            dates += we.end_date.strftime("%Y-%m-%d")
+
+        we_items.append(
+            f"""
+            <div style="background: #f1f3f5; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
+              <strong>{escape(we.company_name)}</strong> &mdash; {escape(we.job_title or '')}<br/>
+              {dates}<br/>
+              {escape(we.description or '')}
+              <form
+                method="post"
+                action="/dashboard/profile/work-experience/{we.id}/delete"
+                style="display: inline;">
+                <button
+                  type="submit"
+                  style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 12px; margin-left: 8px;">
+                  &times;
+                </button>
+              </form>
+            </div>
+            """
+        )
+
+    work_experience_html = "".join(we_items)
+
+    education_list = profile.education_entries or []
+    edu_items: list[str] = []
+
+    for edu in education_list:
+        dates = ""
+
+        if edu.start_date:
+            dates += edu.start_date.strftime("%Y-%m-%d")
+
+        if edu.end_date:
+            if dates:
+                dates += " &mdash; "
+            dates += edu.end_date.strftime("%Y-%m-%d")
+
+        # Note: CandidateEducation has no `description` field --
+        # only institution, degree, field_of_study, and dates.
+        edu_items.append(
+            f"""
+            <div style="background: #f1f3f5; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
+              {escape(edu.institution)} &mdash; {escape(edu.degree)}
+              {', ' + escape(edu.field_of_study) if edu.field_of_study else ''}<br/>
+              {dates}
+              <form
+                method="post"
+                action="/dashboard/profile/education/{edu.id}/delete"
+                style="display: inline;">
+                <button
+                  type="submit"
+                  style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 12px; margin-left: 8px;">
+                  &times;
+                </button>
+              </form>
+            </div>
+            """
+        )
+
+    education_html = "".join(edu_items)
+
     return HTMLResponse(
         content=f"""
         <!doctype html>
@@ -773,6 +878,125 @@ def dashboard_profile_page(
                 </div>
               </form>
             </section>
+
+            <section>
+              <h2>Skills</h2>
+
+              <div class="skills-list">
+                {skills_html}
+              </div>
+
+              <form
+                method="post"
+                action="/dashboard/profile/skills/add"
+                style="margin-top: 12px;"
+              >
+                <input
+                  type="text"
+                  name="skill_name"
+                  placeholder="New skill"
+                  required
+                  style="width: 60%; margin-right: 8px;"
+                />
+                <button type="submit" style="width: 30%;">
+                  Add
+                </button>
+              </form>
+            </section>
+
+            <section>
+              <h2>Work Experience</h2>
+
+              <div class="work-experience-list">
+                {work_experience_html}
+              </div>
+
+              <form
+                method="post"
+                action="/dashboard/profile/work-experience/add"
+                style="margin-top: 12px;"
+              >
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px;">
+                  <input
+                    type="text"
+                    name="company_name"
+                    placeholder="Company"
+                    required
+                    style="width: 100%;"
+                  />
+                  <input
+                    type="text"
+                    name="job_title"
+                    placeholder="Job title"
+                    style="width: 100%;"
+                  />
+                  <input
+                    type="text"
+                    name="start_date"
+                    placeholder="Start (YYYY-MM-DD)"
+                    required
+                    style="width: 100%;"
+                  />
+                  <input
+                    type="text"
+                    name="end_date"
+                    placeholder="End (YYYY-MM-DD), leave blank"
+                    style="width: 100%;"
+                  />
+                  <button type="submit">Add</button>
+                </div>
+              </form>
+            </section>
+
+            <section>
+              <h2>Education</h2>
+
+              <div class="education-list">
+                {education_html}
+              </div>
+
+              <form
+                method="post"
+                action="/dashboard/profile/education/add"
+                style="margin-top: 12px;"
+              >
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px;">
+                  <input
+                    type="text"
+                    name="institution"
+                    placeholder="Institution"
+                    required
+                    style="width: 100%;"
+                  />
+                  <input
+                    type="text"
+                    name="degree"
+                    placeholder="Degree"
+                    required
+                    style="width: 100%;"
+                  />
+                  <input
+                    type="text"
+                    name="field_of_study"
+                    placeholder="Field of study (optional)"
+                    style="width: 100%;"
+                  />
+                  <input
+                    type="text"
+                    name="start_date"
+                    placeholder="Start (YYYY-MM-DD)"
+                    style="width: 100%;"
+                  />
+                  <input
+                    type="text"
+                    name="end_date"
+                    placeholder="End (YYYY-MM-DD), leave blank"
+                    style="width: 100%;"
+                  />
+                  <button type="submit">Add</button>
+                </div>
+              </form>
+            </section>
           </main>
         </body>
         </html>
@@ -813,6 +1037,228 @@ def update_dashboard_profile(
         skills=skills.strip() if skills else None,
         experience=experience.strip() if experience else None,
         education=education.strip() if education else None,
+    )
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
+    )
+
+
+@router.post(
+    "/dashboard/profile/skills/add",
+)
+def add_skill_via_dashboard(
+    skill_name: str | None = Form(default=None),
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Add a skill to the user's profile via the dashboard.
+
+    A blank/missing skill name is silently ignored rather than
+    passed to the service, since CandidateSkill.name is required
+    and the service does not itself validate for blank input.
+    """
+
+    cleaned_name = skill_name.strip() if skill_name else None
+
+    if cleaned_name:
+        service = CandidateProfileService(session)
+
+        try:
+            service.add_skill(
+                user_id=current_user.id,
+                name=cleaned_name,
+            )
+        except ValueError:
+            pass
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
+    )
+
+
+@router.post(
+    "/dashboard/profile/skills/{skill_id}/delete",
+)
+def remove_skill_via_dashboard(
+    skill_id: int,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Remove a skill from the user's profile via the dashboard.
+    """
+
+    service = CandidateProfileService(session)
+
+    service.remove_skill(
+        user_id=current_user.id,
+        skill_id=skill_id,
+    )
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
+    )
+
+
+@router.post(
+    "/dashboard/profile/work-experience/add",
+)
+def add_work_experience_via_dashboard(
+    company_name: str | None = Form(default=None),
+    job_title: str | None = Form(default=None),
+    start_date: str | None = Form(default=None),
+    end_date: str | None = Form(default=None),
+    description: str | None = Form(default=None),
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Add work experience to the user's profile via the dashboard.
+
+    Company name and start date are required by the underlying
+    model/service; a submission missing either is silently
+    ignored here rather than allowed to reach the service, where
+    it would otherwise raise an uncaught IntegrityError (blank
+    company_name) or TypeError (blank start_date passed to
+    datetime.fromisoformat).
+    """
+
+    cleaned_company_name = (
+        company_name.strip() if company_name else None
+    )
+    cleaned_start_date = (
+        start_date.strip() if start_date else None
+    )
+
+    if cleaned_company_name and cleaned_start_date:
+        service = CandidateProfileService(session)
+
+        try:
+            service.add_work_experience(
+                user_id=current_user.id,
+                company_name=cleaned_company_name,
+                job_title=(
+                    job_title.strip() if job_title else None
+                ),
+                start_date=cleaned_start_date,
+                end_date=(
+                    end_date.strip() if end_date else None
+                ),
+                description=(
+                    description.strip() if description else None
+                ),
+            )
+        except ValueError:
+            pass
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
+    )
+
+
+@router.post(
+    "/dashboard/profile/work-experience/{exp_id}/delete",
+)
+def remove_work_experience_via_dashboard(
+    exp_id: int,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Remove work experience from the user's profile via the dashboard.
+    """
+
+    service = CandidateProfileService(session)
+
+    service.remove_work_experience(
+        user_id=current_user.id,
+        experience_id=exp_id,
+    )
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
+    )
+
+
+@router.post(
+    "/dashboard/profile/education/add",
+)
+def add_education_via_dashboard(
+    institution: str | None = Form(default=None),
+    degree: str | None = Form(default=None),
+    field_of_study: str | None = Form(default=None),
+    start_date: str | None = Form(default=None),
+    end_date: str | None = Form(default=None),
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Add education to the user's profile via the dashboard.
+
+    Institution and degree are required by the underlying model;
+    a submission missing either is silently ignored here rather
+    than allowed to reach the service, where it would otherwise
+    raise an uncaught IntegrityError.
+    """
+
+    cleaned_institution = (
+        institution.strip() if institution else None
+    )
+    cleaned_degree = degree.strip() if degree else None
+
+    if cleaned_institution and cleaned_degree:
+        service = CandidateProfileService(session)
+
+        try:
+            service.add_education(
+                user_id=current_user.id,
+                institution=cleaned_institution,
+                degree=cleaned_degree,
+                field_of_study=(
+                    field_of_study.strip()
+                    if field_of_study
+                    else None
+                ),
+                start_date=(
+                    start_date.strip() if start_date else None
+                ),
+                end_date=(
+                    end_date.strip() if end_date else None
+                ),
+            )
+        except ValueError:
+            pass
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
+    )
+
+
+@router.post(
+    "/dashboard/profile/education/{edu_id}/delete",
+)
+def remove_education_via_dashboard(
+    edu_id: int,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Remove education from the user's profile via the dashboard.
+    """
+
+    service = CandidateProfileService(session)
+
+    service.remove_education(
+        user_id=current_user.id,
+        education_id=edu_id,
     )
 
     return RedirectResponse(
@@ -1093,7 +1539,7 @@ def dashboard_job_detail_page(
               </section>
 
               <div class="actions">
-                <a
+                
                   class="button"
                   href="{posting_url}"
                   target="_blank"
@@ -1104,7 +1550,7 @@ def dashboard_job_detail_page(
 
                 {application_control}
 
-                <a
+                
                   class="button secondary"
                   href="/dashboard"
                 >

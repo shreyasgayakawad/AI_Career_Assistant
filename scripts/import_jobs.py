@@ -56,11 +56,50 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help=(
             "Company/board identifier passed to the connector, "
-            "e.g. 'palantir'."
+            "e.g. 'palantir'. "
+            "Required for backward compatibility with existing connectors "
+            "that accept a single company argument."
+        ),
+    )
+
+    parser.add_argument(
+        "--kwarg",
+        action="append",
+        default=[],
+        help=(
+            "Connector-specific key=value argument (repeatable). "
+            "e.g. '--kwarg wd_server=wd1 --kwarg tenant=acme --kwarg site=External'. "
+            "Values are collected into a dict passed to the connector via "
+            "connector_kwargs. Mutually exclusive with --company for new connectors, "
+            "but kept for backward compatibility."
         ),
     )
 
     return parser.parse_args()
+
+
+def _build_connector_kwargs(args: argparse.Namespace) -> dict[str, object]:
+    """
+    Build a connector kwargs dict from parsed CLI arguments.
+
+    Collects --kwarg key=value pairs into a dict. Falls back to --company
+    for backward compatibility with existing connectors.
+    """
+
+    kwargs: dict[str, object] = {}
+
+    if args.kwarg:
+        for kwarg in args.kwarg:
+            if "=" not in kwarg:
+                raise ValueError(
+                    f"Invalid --kwarg format: '{kwarg}'. Expected key=value."
+                )
+            key, _, value = kwarg.partition("=")
+            kwargs[key.strip()] = value.strip()
+    else:
+        kwargs["company"] = args.company
+
+    return kwargs
 
 
 def main() -> None:
@@ -78,9 +117,7 @@ def main() -> None:
         imported, skipped = service.discover(
             scraper_name=args.scraper,
             source_name=args.source,
-            connector_kwargs={
-                "company": args.company,
-            },
+            connector_kwargs=_build_connector_kwargs(args),
         )
 
         print("=" * 50)

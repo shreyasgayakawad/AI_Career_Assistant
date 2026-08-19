@@ -11,6 +11,7 @@ from app.connectors.base_connector import BaseConnector
 from app.connectors.greenhouse_connector import GreenhouseConnector
 from app.connectors.lever_connector import LeverConnector
 from app.connectors.smartrecruiters_connector import SmartRecruitersConnector
+from app.connectors.workday_connector import WorkdayConnector
 
 
 _CONNECTORS: dict[str, type[BaseConnector]] = {
@@ -18,6 +19,7 @@ _CONNECTORS: dict[str, type[BaseConnector]] = {
     "lever_scraper": LeverConnector,
     "ashby_scraper": AshbyConnector,
     "smartrecruiters_scraper": SmartRecruitersConnector,
+    "workday_scraper": WorkdayConnector,
 }
 
 

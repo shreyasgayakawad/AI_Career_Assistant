@@ -46,6 +46,16 @@ class HttpClient:
 
         return response.json()
 
+    def post_json(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
+        """
+        Send a POST request with a JSON body and return the response as JSON.
+        """
+
+        response = self.client.post(url, json=body)
+        response.raise_for_status()
+
+        return response.json()
+
     def close(self) -> None:
         """
         Close the HTTP client.

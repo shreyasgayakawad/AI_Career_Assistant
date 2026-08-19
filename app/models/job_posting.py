@@ -11,6 +11,7 @@ from datetime import datetime
 from sqlalchemy import (
     DateTime,
     ForeignKey,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -74,6 +75,16 @@ class JobPosting(BaseModel):
 
     salary: Mapped[str | None] = mapped_column(
         String(255),
+        nullable=True,
+    )
+
+    salary_min: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    salary_max: Mapped[int | None] = mapped_column(
+        Integer,
         nullable=True,
     )
 

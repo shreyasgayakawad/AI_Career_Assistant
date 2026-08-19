@@ -72,6 +72,12 @@ class JobSearchService:
     ) -> list[Job]:
         """
         Search logical jobs using optional filters.
+
+        Note: salary is posting-level data (the same logical Job can
+        have different postings with different salaries across
+        sources), so it is intentionally not filterable here. Salary
+        filtering lives on search_available_postings() instead, which
+        operates on JobPosting records.
         """
 
         company: Company | None = None
@@ -100,6 +106,8 @@ class JobSearchService:
         has_salary: bool | None = None,
         employment_type: str | None = None,
         experience_level: str | None = None,
+        salary_min: int | None = None,
+        salary_max: int | None = None,
     ) -> list[JobPosting]:
         """
         Search active job postings that have not been applied to.
@@ -110,6 +118,9 @@ class JobSearchService:
         Has-salary is an optional bool filter: True = has salary data, False = no salary data.
         Employment type is an optional exact-match filter on the logical job.
         Experience level is an optional exact-match filter on the logical job.
+        Salary range filtering:
+          - salary_min: show postings that could pay at least X (filters on salary_max >= X)
+          - salary_max: show postings with a minimum <= Y (filters on salary_min <= Y)
         """
 
         company: Company | None = None
@@ -147,5 +158,7 @@ class JobSearchService:
             has_salary=has_salary,
             employment_type=employment_type,
             experience_level=experience_level,
+            salary_min=salary_min,
+            salary_max=salary_max,
             exclude_applied=True,
         )

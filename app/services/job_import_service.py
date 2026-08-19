@@ -17,6 +17,7 @@ from app.repositories.job_posting_repository import (
 )
 from app.repositories.job_repository import JobRepository
 from app.repositories.source_repository import SourceRepository
+from app.services.salary_parser import parse_salary_text
 
 
 class JobImportService:
@@ -168,7 +169,11 @@ class JobImportService:
     ) -> JobPosting:
         """
         Create a JobPosting entity.
+
+        Parses the salary text into numeric min/max bounds using the salary parser.
+        If the salary text cannot be parsed, salary_min/salary_max remain None.
         """
+        min_salary, max_salary = parse_salary_text(salary) if salary else (None, None)
 
         posting = JobPosting(
             job=job,
@@ -180,6 +185,8 @@ class JobImportService:
             description=description,
             external_job_id=external_job_id,
             salary=salary,
+            salary_min=min_salary,
+            salary_max=max_salary,
             posted_date=posted_date,
         )
 

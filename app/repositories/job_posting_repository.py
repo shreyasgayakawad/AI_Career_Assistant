@@ -70,6 +70,8 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         has_salary: bool | None = None,
         employment_type: str | None = None,
         experience_level: str | None = None,
+        salary_min: int | None = None,
+        salary_max: int | None = None,
         exclude_applied: bool = True,
     ) -> list[JobPosting]:
         """
@@ -82,7 +84,100 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         Location filtering uses case-insensitive partial match.
         Posted-after filtering uses ISO date string (e.g. ?posted_after=2026-08-01).
         Has-salary filtering: True = postings with salary data, False = without.
+        Salary range filtering:
+          - salary_min: show jobs that could pay at least X (filters on salary_max >= X)
+          - salary_max: show jobs with minimum <= Y (filters on salary_min <= Y)
         """
+
+        statement = (
+            select(JobPosting)
+            .join(JobPosting.job)
+        )
+
+        statement = statement.where(
+            Job.active.is_(True),
+            JobPosting.status == "ACTIVE",
+        )
+
+        if company is not None:
+            statement = statement.where(
+                Job.company_id == company.id,
+            )
+
+        if work_mode is not None:
+            statement = statement.where(
+                JobPosting.work_mode == work_mode,
+            )
+
+        if location:
+            statement = statement.where(
+                JobPosting.location.ilike(f"%{location}%"),
+            )
+
+        if posted_after:
+            statement = statement.where(
+                JobPosting.posted_date >= posted_after,
+            )
+
+        if has_salary is not None:
+            if has_salary:
+                statement = statement.where(
+                    JobPosting.salary.isnot(None),
+                )
+            else:
+                statement = statement.where(
+                    JobPosting.salary.is_(None),
+                )
+
+        if salary_min is not None:
+            # "Show jobs that could pay at least X"
+            # i.e. the posting's maximum stated salary should clear the bar
+            statement = statement.where(
+                JobPosting.salary_max >= salary_min,
+            )
+
+        if salary_max is not None:
+            # "Show jobs with minimum within range"
+            # i.e. the posting's minimum stated salary should be at most Y
+            statement = statement.where(
+                JobPosting.salary_min <= salary_max,
+            )
+
+        if employment_type is not None:
+            statement = statement.where(
+                Job.employment_type == employment_type,
+            )
+
+        if experience_level is not None:
+            statement = statement.where(
+                Job.experience_level == experience_level,
+            )
+
+        if keyword:
+            pattern = f"%{keyword}%"
+
+            statement = statement.where(
+                JobPosting.title.ilike(pattern)
+                | JobPosting.description.ilike(pattern)
+            )
+
+        if exclude_applied:
+            statement = statement.where(
+                ~select(Application.id)
+                .where(
+                    Application.job_posting_id
+                    == JobPosting.id,
+                )
+                .exists()
+            )
+
+        statement = statement.order_by(
+            JobPosting.title,
+        )
+
+        return list(
+            self.session.scalars(statement).all()
+        )
 
         statement = (
             select(JobPosting)

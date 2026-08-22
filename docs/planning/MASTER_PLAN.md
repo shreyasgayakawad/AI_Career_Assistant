@@ -98,49 +98,45 @@ Completed:
 
 # Current Milestone
 
-## Milestone 3 — Core Backend & Career Application Foundation
+## Phases 5–7 Delivered — Planning Reset
 
-**Status:** In Progress
+**Status:** Transition point
 
-The project has moved beyond the original architecture/planning-only stage and is now implementing the core career application platform.
+Core backend, multi-source job discovery, structured candidate profile, deterministic job matching (Phase 5), application status tracking (Phase 6), and template-based resume & cover letter drafting (Phase 7) are shipped, tested, and committed. See `PHASES.md` for the canonical phase list and next-phase candidates.
 
 ---
 
 # Current Epic
 
-## Epic 3 — Core Backend & Application Foundation
+## Epic 5 — Intelligence Engine (Partially Delivered)
 
 ### Objective
 
-Establish a maintainable backend architecture and implement the foundational entities and workflows required by the Career Operating System.
+Deliver career intelligence without violating the project's Free-of-Cost principle: deterministic matching, template-based drafting, and honest labeling of what is and is not AI.
 
 ### Current Status
 
-Core backend architecture is implemented.
-
-The next development work should focus on expanding career intelligence and job discovery capabilities while preserving the existing repository/service architecture.
+Matching (Phase 5) and draft assistance (Phase 7) are shipped. ATS optimization and skill-gap analysis remain planned; both need their own design conversations before implementation.
 
 ---
 
 # Current Sprint
 
-## Sprint 3.1 — Planning Synchronization & Next Feature Selection
+## Documentation & Planning Synchronization (2026-08-22)
 
 ### Goal
 
-Synchronize project planning documentation with the implemented system and select the next concrete product capability.
+Bring planning documentation back in sync with the implemented system after Phases 5–7.
 
 ### Current Tasks
 
-* [x] Complete roadmap documentation
-* [x] Establish repository and service architecture
-* [x] Implement Google authentication
-* [x] Implement career dashboard
-* [x] Implement job application tracking
-* [x] Implement candidate profile management
-* [ ] Update backlog to reflect completed implementation
-* [ ] Define next implementation sprint
-* [ ] Select next product feature
+* [x] Record Phase 7 decisions in `DECISIONS.md` (ADR 005)
+* [x] Update README roadmap statuses
+* [x] Create CHANGELOG entries for recent phases
+* [x] Add Free-of-Cost principle to `PRODUCT_VISION.md`
+* [x] Create canonical `PHASES.md` phase tracker
+* [x] Archive the Phase 7 implementation plan under `docs/planning/phases/`
+* [ ] Select and scope the next phase (Apply Kit is the leading candidate — see `BACKLOG.md` Future Ideas)
 
 ---
 
@@ -164,11 +160,14 @@ Planned capabilities:
 
 AI Intelligence Engine
 
-Planned capabilities:
+Partially delivered:
 
-* AI job matching
-* Resume tailoring
-* Cover letter generation
+* AI job matching — shipped Phase 5 as deterministic, zero-cost keyword-based scoring (no LLM)
+* Resume tailoring — shipped Phase 7 as skill-emphasis suggestions from structured profile data
+* Cover letter generation — shipped Phase 7 as fixed-template drafts; explicitly no AI text generation (see DECISIONS.md ADR 005)
+
+Still planned:
+
 * ATS optimization
 * Skill-gap analysis
 
@@ -218,11 +217,13 @@ Planned capabilities:
 
 Current technical debt:
 
-* Legacy prototype folders may still need migration into `app/`
-* Unit testing framework is not yet standardized
-* Configuration system may require further consolidation
-* Database migrations are currently script-based rather than managed by a migration framework
-* Browser UI is currently implemented directly in route modules
+* Browser UI is implemented directly in route modules as server-rendered strings (`web.py`); a templating layer is a candidate future refactor
+* Email/password sign-in cannot establish a browser session cookie — only Google OAuth does; email/password users can only drive the app via API/Bearer (see `BACKLOG.md` Future Ideas)
+* Database migrations remain script-based; Alembic adoption deferred by ADR 003 addendum until a real schema change lands
+* `ROADMAP.md`, `PRODUCT_VISION.md`, and parts of `BACKLOG.md` contain mojibake/escaped-markdown artifacts from earlier encoding mishaps; content is being corrected opportunistically
+* `docs/features/`, `docs/meetings/`, and `docs/research/` are empty scaffolding
+
+Resolved since this list was last reviewed: unit testing framework standardized (ADR 004); legacy prototype migration completed; configuration loading consolidated via ADR 001.
 
 ---
 
@@ -283,3 +284,5 @@ To keep the project consistent, every development session follows these principl
 5. Prioritize maintainability over speed.
 6. Avoid duplicate code and duplicate responsibilities.
 7. Keep the repository in a clean, buildable state after every session.
+8. Preserve the Free-of-Cost constraint (see `PRODUCT_VISION.md`, Guiding Principles): no feature may introduce paid APIs, subscriptions, metered services, or reliance on free-tier external services — including LLM/AI-service calls, even free ones. Features that cannot meet this constraint are deferred or redesigned, not funded by exceptions.
+9. Nothing is committed or pushed until it has been reviewed: implement → validate locally → review the real diff and test output together → commit only after that review.

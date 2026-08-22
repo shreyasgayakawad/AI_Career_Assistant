@@ -124,14 +124,14 @@ The following capabilities have already been implemented and are no longer activ
 
 ## Technical Tasks
 
+- [x] Cover letter generator — shipped Phase 7 as a fixed-template draft service, no LLM (see DECISIONS.md ADR 005)
+- [x] Resume matching engine — delivered by reusing Phase 5's JobMatchingService (skill-emphasis wrapper + parity regression test); no second matching implementation
+- [ ] Resume tailoring engine — partially covered by Phase 7 skill-emphasis suggestions; full document tailoring deferred since no resume file/upload feature exists
 - [ ] Resume model and document management
-- [ ] Resume matching engine
-- [ ] Resume tailoring engine
-- [ ] Cover letter generator
-- [ ] Prompt management
-- [ ] AI service layer
+- [ ] Prompt management — not applicable while the no-LLM constraint (ADR 005) holds
+- [ ] AI service layer — same condition as prompt management
 - [ ] ATS optimization
-- [ ] Skill-gap analysis
+- [ ] Skill-gap analysis — deferred; requires real NLP, hardcoded dictionaries rejected for the MVP
 
 ---
 
@@ -184,6 +184,12 @@ These ideas are intentionally out of scope for the current milestones.
 - GitHub profile analysis
 - Learning recommendations
 - AI interview coach
+
+### Discovered during Phase 7 review (2026-08-22)
+
+- Browser session cookie for email/password sign-in — only Google OAuth sets the dashboard session cookie today; email/password login returns a JSON token usable via API/Bearer but cannot drive the browser UI. Small auth UX fix worth its own ticket.
+- "Apply Kit" application handoff — per-job screen with a deep link (`posting_url` already exists on every posting), copy-ready contact/profile block, the editable draft letter, and a reusable answer bank. Goal: minimize time-to-apply at $0 (submitting applications is already free on all major boards/ATSes; time is the real cost).
+- Live career-data import from LinkedIn/Gmail — investigated and rejected: OIDC login provides identity only, and skills/work history would require restricted OAuth scopes (paid Google security audit) or ToS-violating scraping. Manual entry stays the MVP path; acceptable future routes are paste-import or a single-file Drive Picker flow.
 
 ---
 

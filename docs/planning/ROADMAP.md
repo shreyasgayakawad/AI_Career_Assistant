@@ -158,19 +158,35 @@ Planned Deliverables:
 
 
 
-Planned Deliverables:
+Status: Partially Delivered
 
 
 
-\* AI job matching
+Delivered:
 
-\* Resume tailoring
 
-\* Cover letter generation
+
+\* AI job matching - shipped Phase 5 as deterministic, zero-cost keyword-based scoring (no LLM)
+
+
+
+\* Resume tailoring - shipped Phase 7 as skill-emphasis suggestions derived from structured profile data (no resume-file editing; no such feature exists)
+
+
+
+\* Cover letter generation - shipped Phase 7 as fixed-template drafts filled with real candidate data; explicitly no AI text generation (DECISIONS.md ADR 005)
+
+
+
+Still planned:
+
+
 
 \* ATS optimization
 
-\* Skill-gap analysis
+
+
+\* Skill-gap analysis - deferred; needs real NLP, hardcoded dictionaries rejected for the MVP
 
 
 

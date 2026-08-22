@@ -194,10 +194,10 @@ git diff --check
 ## 8. Project Roadmap
 
 - **Phase 1: Stabilization & Core Foundation** (In Progress)
-- **Phase 2: Multi-Source Job Discovery** (Lever, Ashby, Wellfound, Workday, LinkedIn)
-- **Phase 3: Rich Search Filters & Ingestion Pipeline**
-- **Phase 4: Structured Candidate Career Profile**
-- **Phase 5: AI Job Matching & Gap Analysis**
-- **Phase 6: Application Pipeline Lifecycle Tracking**
-- **Phase 7: AI Resume & Cover Letter Generation**
-- **Phase 8: Autonomous Assistant Career Workflow**
+- **Phase 2: Multi-Source Job Discovery** (Shipped — Greenhouse, Lever, Ashby, SmartRecruiters, Workday)
+- **Phase 3: Rich Search Filters & Ingestion Pipeline** (Shipped — location, posted-after, salary range/presence, employment type, experience level, work mode, multi-keyword search)
+- **Phase 4: Structured Candidate Career Profile** (Shipped — skills, work experience, education)
+- **Phase 5: Job Matching** (Shipped — deterministic, zero-cost keyword-based scoring; not LLM-based despite the original "AI" label. Gap analysis was not built.)
+- **Phase 6: Application Pipeline Lifecycle Tracking** (Shipped)
+- **Phase 7: Resume & Cover Letter Draft Assistance** (Shipped — fixed-template drafts filled from real structured profile data; explicitly no AI text generation. See `docs/architecture/DECISIONS.md` ADR 005 and `docs/CHANGELOG.md`.)
+- **Phase 8: Autonomous Assistant Career Workflow** (Planned)

@@ -194,6 +194,42 @@ The user makes the final decision before important actions such as submitting an
 
 
 
+\## Free of Cost
+
+
+
+This project must remain free of cost for the developer who runs it and the users who rely on it. Cost is a founding design constraint, checked at planning time for every feature - not an optimization applied afterwards.
+
+
+
+That means:
+
+
+
+\* No paid APIs, subscriptions, or metered third-party services anywhere in the product
+
+
+
+\* No reliance on free tiers of external services either - free tiers are rate limits, price changes, and deprecations waiting to happen
+
+
+
+\* Deterministic implementations are preferred over LLM or AI-service calls, even when a free tier is available
+
+
+
+\* Applying to jobs is already free everywhere; our job is to minimize the time it takes, never to add a fee
+
+
+
+Any feature that cannot be built within this constraint is deferred or redesigned - never funded by sneaking in a paid dependency.
+
+
+
+\---
+
+
+
 \## Modular Design
 
 

@@ -92,3 +92,22 @@ A standardized test runner is provided via `scripts/run_all_tests.py` (executed 
 - Fast regression testing across the entire platform in a single command.
 - Direct compatibility with standard CI/CD pipelines.
 - Test scripts are subprocess-isolated with `PYTHONIOENCODING=utf-8` forced on the child environment, since non-ASCII job data (e.g. international postings) previously caused `UnicodeEncodeError` failures under Windows' default console codepage.
+
+---
+
+## ADR 005: Deterministic Resume & Cover Letter Assistance (No LLM)
+
+### Context
+Phase 7 required "resume tailoring" and cover letter generation. Three constraints shaped the decision: (1) no resume file exists in this system — there is no upload, storage, or parsing feature, only structured profile data; (2) job postings carry no structured skills field, so genuine "you're missing X" gap detection is not reliably buildable without real NLP; (3) any LLM-based approach introduces cost, external dependencies, nondeterministic output, and data-privacy concerns. The product vision states: *"The assistant prepares recommendations. The user makes the final decision."*
+
+### Decision
+- **Skill emphasis** is a thin wrapper over `JobMatchingService.calculate_match_score()` (Phase 5): it returns that service's `matched_skills` directly and never reimplements matching. A parity regression test in `scripts/test_resume_assistant_service.py` asserts the two cannot drift apart.
+- **Cover letters** are produced by filling one fixed template string with real candidate/job data (`User.name`, `CandidateWorkExperience`, matched skills, `JobPosting.title`, company name). Missing data degrades gracefully — shorter generic letter, never crashes, never literal unfilled placeholders.
+- **Drafts are on-demand only**: no persistence, no new tables, no per-user templates for the MVP. Saved drafts or customizable templates would require new schema and their own design conversation.
+- **Hard constraint:** no LLM API call, no local model runtime (Ollama, llama.cpp, etc.), no paid or free-tier third-party AI service anywhere in this feature — enforced by a grep check across changed files in the pre-commit validation checklist.
+- **Out of scope:** job-description skill-gap detection (would require crude hardcoded dictionaries), resume upload/parsing, draft persistence.
+
+### Consequences
+- Zero marginal cost per draft; output is fully deterministic and testable.
+- Output quality is bounded by the template; drafts are explicitly labeled as starting points the user must personalize.
+- If genuinely generative text is ever wanted, that requires an explicit team decision to overturn the hard constraint above — it is not an implementation detail anyone may swap in unilaterally.

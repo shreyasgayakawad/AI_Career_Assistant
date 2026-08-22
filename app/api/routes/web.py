@@ -26,6 +26,10 @@ from app.services.job_search_service import JobSearchService
 from app.services.portal_connection_service import (
     PortalConnectionService,
 )
+from app.services.resume_assistant_service import (
+    COVER_LETTER_DRAFT_NOTE,
+    ResumeAssistantService,
+)
 
 router = APIRouter(tags=["Browser"])
 
@@ -1434,6 +1438,63 @@ def dashboard_job_detail_page(
         """
     # ----------------------------------------------------------------------
 
+    # --- Cover-letter draft integration (Phase 7) ------------------------
+    # Reuses the same candidate_profile fetched above via
+    # get_or_create_profile(). The draft is a fixed template filled
+    # with real profile data -- no AI text generation anywhere. All
+    # candidate-controlled text is escaped before it enters the HTML.
+    resume_assistant_service = ResumeAssistantService()
+
+    skill_emphasis = resume_assistant_service.get_skill_emphasis(
+        candidate_profile=candidate_profile,
+        job_posting=job_posting,
+    )
+
+    cover_letter_draft = (
+        resume_assistant_service.generate_cover_letter_draft(
+            candidate_name=current_user.name,
+            candidate_profile=candidate_profile,
+            job_posting=job_posting,
+            company_name=job.company.name,
+        )
+    )
+
+    skill_emphasis_pills_html = "".join(
+        f'<span class="matched-skill-pill">{escape(skill)}</span>'
+        for skill in skill_emphasis
+    )
+
+    if not skill_emphasis_pills_html:
+        skill_emphasis_pills_html = (
+            '<span class="no-matched-skills">'
+            "None of your tracked skills were found in this posting."
+            "</span>"
+        )
+
+    cover_letter_html = f"""
+    <section class="cover-letter">
+      <h2>Cover Letter Draft</h2>
+
+      <p class="draft-note">
+        {escape(COVER_LETTER_DRAFT_NOTE)}
+      </p>
+
+      <textarea
+        class="draft-textarea"
+        rows="14"
+      >{escape(cover_letter_draft)}</textarea>
+
+      <p class="skill-emphasis-label">
+        Your skills found in this posting:
+      </p>
+
+      <div class="matched-skills">
+        {skill_emphasis_pills_html}
+      </div>
+    </section>
+    """
+    # ----------------------------------------------------------------------
+
     description = (
         escape(job_posting.description)
         if job_posting.description
@@ -1581,6 +1642,41 @@ def dashboard_job_detail_page(
               margin-bottom: 24px;
               padding: 16px 20px;
             }}
+
+            .cover-letter {{
+              background: #f6f8fb;
+              border-radius: 12px;
+              margin-bottom: 24px;
+              padding: 16px 20px;
+            }}
+
+            .cover-letter h2 {{
+              font-size: 20px;
+              margin: 0 0 10px;
+            }}
+
+            .draft-note {{
+              color: #596579;
+              font-size: 13px;
+              margin: 0 0 12px;
+            }}
+
+            .draft-textarea {{
+              border: 1px solid #d5dbe3;
+              border-radius: 8px;
+              box-sizing: border-box;
+              font-family: inherit;
+              font-size: 14px;
+              line-height: 1.5;
+              padding: 12px;
+              width: 100%;
+            }}
+
+            .skill-emphasis-label {{
+              color: #172033;
+              font-weight: 700;
+              margin: 14px 0 0;
+            }}
           </style>
         </head>
 
@@ -1597,6 +1693,8 @@ def dashboard_job_detail_page(
               </p>
 
               {match_score_html}
+
+              {cover_letter_html}
 
               <section>
                 <h2>Job Description</h2>

@@ -12,6 +12,7 @@ from app.auth.dependencies import get_current_user
 from app.models.job_posting import JobPosting
 from app.models.user import User
 from app.schemas.job_schema import (
+    CoverLetterDraftResponse,
     JobDetailResponse,
     JobSummaryResponse,
     MatchResultResponse,
@@ -19,6 +20,10 @@ from app.schemas.job_schema import (
 from app.services.candidate_profile_service import CandidateProfileService
 from app.services.job_matching_service import JobMatchingService
 from app.services.job_search_service import JobSearchService
+from app.services.resume_assistant_service import (
+    COVER_LETTER_DRAFT_NOTE,
+    ResumeAssistantService,
+)
 
 
 router = APIRouter(
@@ -186,4 +191,64 @@ def get_job_match_score(
         unmatched_skills=result.unmatched_skills,
         location_match=result.location_match,
         zero_skills_message=result.zero_skills_message,
+    )
+
+
+@router.get(
+    "/{job_posting_id}/cover-letter-draft",
+    response_model=CoverLetterDraftResponse,
+)
+def get_cover_letter_draft(
+    job_posting_id: int,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CoverLetterDraftResponse:
+    """
+    Assemble a cover-letter draft for this posting from the current
+    user's structured profile data using a fixed template.
+
+    This is not AI-generated text: the draft is a deterministic
+    fill-in of real profile data, returned with a note making clear
+    it is a starting point to edit rather than a finished letter.
+
+    The candidate profile is created automatically if this is the
+    user's first interaction with their profile, matching the lazy-
+    creation behavior of GET /jobs/{id}/match-score.
+    """
+
+    job_posting = session.get(
+        JobPosting,
+        job_posting_id,
+    )
+
+    if job_posting is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Job posting not found.",
+        )
+
+    profile_service = CandidateProfileService(session)
+    candidate_profile = profile_service.get_or_create_profile(
+        current_user.id,
+    )
+
+    assistant_service = ResumeAssistantService()
+
+    skill_emphasis = assistant_service.get_skill_emphasis(
+        candidate_profile=candidate_profile,
+        job_posting=job_posting,
+    )
+
+    draft_text = assistant_service.generate_cover_letter_draft(
+        candidate_name=current_user.name,
+        candidate_profile=candidate_profile,
+        job_posting=job_posting,
+        company_name=job_posting.job.company.name,
+    )
+
+    return CoverLetterDraftResponse(
+        job_posting_id=job_posting.id,
+        draft_text=draft_text,
+        skill_emphasis=skill_emphasis,
+        note=COVER_LETTER_DRAFT_NOTE,
     )

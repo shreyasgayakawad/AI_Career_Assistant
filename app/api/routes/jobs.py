@@ -8,10 +8,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
+from app.auth.dependencies import get_current_user
+from app.models.job_posting import JobPosting
+from app.models.user import User
 from app.schemas.job_schema import (
     JobDetailResponse,
     JobSummaryResponse,
+    MatchResultResponse,
 )
+from app.services.candidate_profile_service import CandidateProfileService
+from app.services.job_matching_service import JobMatchingService
 from app.services.job_search_service import JobSearchService
 
 
@@ -129,4 +135,55 @@ def get_job(
         work_mode=posting.work_mode,
         posting_url=posting.posting_url,
         description=posting.description,
+    )
+
+
+@router.get(
+    "/{job_posting_id}/match-score",
+    response_model=MatchResultResponse,
+)
+def get_job_match_score(
+    job_posting_id: int,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> MatchResultResponse:
+    """
+    Retrieve the match score between the current user's candidate
+    profile and a specific job posting.
+
+    The candidate profile is created automatically if this is the
+    user's first interaction with their profile, matching the lazy-
+    creation behavior already used by GET /profile/ and the Phase 4
+    profile-writing endpoints.
+    """
+
+    job_posting = session.get(
+        JobPosting,
+        job_posting_id,
+    )
+
+    if job_posting is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Job posting not found.",
+        )
+
+    profile_service = CandidateProfileService(session)
+    candidate_profile = profile_service.get_or_create_profile(
+        current_user.id,
+    )
+
+    matching_service = JobMatchingService()
+
+    result = matching_service.calculate_match_score(
+        candidate_profile=candidate_profile,
+        job_posting=job_posting,
+    )
+
+    return MatchResultResponse(
+        overall_score=result.overall_score,
+        matched_skills=result.matched_skills,
+        unmatched_skills=result.unmatched_skills,
+        location_match=result.location_match,
+        zero_skills_message=result.zero_skills_message,
     )

@@ -7,7 +7,7 @@ job-detail, application, and candidate profile pages.
 
 from html import escape
 
-from fastapi import APIRouter, Cookie, Depends, Form
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -21,6 +21,7 @@ from app.services.application_service import ApplicationService
 from app.services.candidate_profile_service import (
     CandidateProfileService,
 )
+from app.services.job_matching_service import JobMatchingService
 from app.services.job_search_service import JobSearchService
 from app.services.portal_connection_service import (
     PortalConnectionService,
@@ -547,13 +548,6 @@ def dashboard_profile_page(
     experience = escape(profile.experience or "")
     education = escape(profile.education or "")
 
-    # ---------------------------------------------------------
-    # Structured entries (Phase 4): skills, work experience,
-    # education. Rendered alongside the free-text fields above,
-    # which remain the source of truth for the plain-text
-    # summary fields per the Phase 4 decision to keep both.
-    # ---------------------------------------------------------
-
     skills_list = profile.skills_list or []
     skills_items: list[str] = []
 
@@ -628,8 +622,6 @@ def dashboard_profile_page(
                 dates += " &mdash; "
             dates += edu.end_date.strftime("%Y-%m-%d")
 
-        # Note: CandidateEducation has no `description` field --
-        # only institution, degree, field_of_study, and dates.
         edu_items.append(
             f"""
             <div style="background: #f1f3f5; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
@@ -1055,10 +1047,6 @@ def add_skill_via_dashboard(
 ) -> RedirectResponse:
     """
     Add a skill to the user's profile via the dashboard.
-
-    A blank/missing skill name is silently ignored rather than
-    passed to the service, since CandidateSkill.name is required
-    and the service does not itself validate for blank input.
     """
 
     cleaned_name = skill_name.strip() if skill_name else None
@@ -1119,13 +1107,6 @@ def add_work_experience_via_dashboard(
 ) -> RedirectResponse:
     """
     Add work experience to the user's profile via the dashboard.
-
-    Company name and start date are required by the underlying
-    model/service; a submission missing either is silently
-    ignored here rather than allowed to reach the service, where
-    it would otherwise raise an uncaught IntegrityError (blank
-    company_name) or TypeError (blank start_date passed to
-    datetime.fromisoformat).
     """
 
     cleaned_company_name = (
@@ -1201,11 +1182,6 @@ def add_education_via_dashboard(
 ) -> RedirectResponse:
     """
     Add education to the user's profile via the dashboard.
-
-    Institution and degree are required by the underlying model;
-    a submission missing either is silently ignored here rather
-    than allowed to reach the service, where it would otherwise
-    raise an uncaught IntegrityError.
     """
 
     cleaned_institution = (
@@ -1409,6 +1385,55 @@ def dashboard_job_detail_page(
         </form>
         """
 
+    # --- Job matching integration (Phase 5) -----------------------------
+    # The candidate profile is fetched via get_or_create_profile(), the
+    # same lazy-creation pattern used everywhere else profile data is
+    # read -- a direct session.get(CandidateProfile, current_user.id)
+    # would incorrectly look up by CandidateProfile's own primary key
+    # using a User id, which is a different id sequence entirely and
+    # would return None for virtually every real user.
+    profile_service = CandidateProfileService(session)
+    candidate_profile = profile_service.get_or_create_profile(
+        current_user.id,
+    )
+
+    matching_service = JobMatchingService()
+    match_result = matching_service.calculate_match_score(
+        candidate_profile=candidate_profile,
+        job_posting=job_posting,
+    )
+
+    if match_result.overall_score is None:
+        match_score_html = f"""
+        <p class="match-score-empty">
+          {escape(match_result.zero_skills_message or "")}
+        </p>
+        """
+    else:
+        matched_skills_html = "".join(
+            f'<span class="matched-skill-pill">{escape(skill)}</span>'
+            for skill in match_result.matched_skills
+        )
+
+        if not matched_skills_html:
+            matched_skills_html = (
+                '<span class="no-matched-skills">'
+                "None of your skills were found in this posting."
+                "</span>"
+            )
+
+        match_score_html = f"""
+        <div class="match-score">
+          <p class="match-score-value">
+            Match score: {match_result.overall_score:.0f}%
+          </p>
+          <div class="matched-skills">
+            {matched_skills_html}
+          </div>
+        </div>
+        """
+    # ----------------------------------------------------------------------
+
     description = (
         escape(job_posting.description)
         if job_posting.description
@@ -1515,6 +1540,47 @@ def dashboard_job_detail_page(
               font-weight: 700;
               margin: 0;
             }}
+
+            .match-score {{
+              background: #eef6ff;
+              border-radius: 12px;
+              margin-bottom: 24px;
+              padding: 16px 20px;
+            }}
+
+            .match-score-value {{
+              color: #1a73e8;
+              font-size: 18px;
+              font-weight: 700;
+              margin: 0 0 10px;
+            }}
+
+            .matched-skills {{
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+            }}
+
+            .matched-skill-pill {{
+              background: #1a73e8;
+              border-radius: 999px;
+              color: white;
+              font-size: 13px;
+              padding: 4px 12px;
+            }}
+
+            .no-matched-skills {{
+              color: #596579;
+              font-size: 13px;
+            }}
+
+            .match-score-empty {{
+              background: #f1f3f5;
+              border-radius: 12px;
+              color: #596579;
+              margin-bottom: 24px;
+              padding: 16px 20px;
+            }}
           </style>
         </head>
 
@@ -1529,6 +1595,8 @@ def dashboard_job_detail_page(
                 <strong>{company_name}</strong>
                 · {location}
               </p>
+
+              {match_score_html}
 
               <section>
                 <h2>Job Description</h2>
@@ -1665,6 +1733,7 @@ def dashboard_applications_page(
                         "%Y-%m-%d %H:%M"
                     )
                 )}
+                · Status: {escape(application.status)}
               </p>
 
               <a href="/dashboard/jobs/{job_posting.id}">

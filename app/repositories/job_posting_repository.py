@@ -80,6 +80,10 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         By default, postings that already have an application
         are excluded.
 
+        Keyword is split on whitespace; every token must appear
+        (case-insensitively) in the posting's title or description,
+        with tokens allowed to match different fields and in any
+        order.
         Work mode filtering uses exact matching.
         Location filtering uses case-insensitive partial match.
         Posted-after filtering uses ISO date string (e.g. ?posted_after=2026-08-01).
@@ -154,88 +158,18 @@ class JobPostingRepository(BaseRepository[JobPosting]):
             )
 
         if keyword:
-            pattern = f"%{keyword}%"
+            # Multi-keyword AND semantics: every whitespace-separated
+            # token must appear in the title or description. Tokens
+            # may match different fields and in any order, so a search
+            # for "cloud support" also finds a posting titled
+            # "Support Engineer - Cloud Platform".
+            for token in keyword.split():
+                pattern = f"%{token}%"
 
-            statement = statement.where(
-                JobPosting.title.ilike(pattern)
-                | JobPosting.description.ilike(pattern)
-            )
-
-        if exclude_applied:
-            statement = statement.where(
-                ~select(Application.id)
-                .where(
-                    Application.job_posting_id
-                    == JobPosting.id,
-                )
-                .exists()
-            )
-
-        statement = statement.order_by(
-            JobPosting.title,
-        )
-
-        return list(
-            self.session.scalars(statement).all()
-        )
-
-        statement = (
-            select(JobPosting)
-            .join(JobPosting.job)
-        )
-
-        statement = statement.where(
-            Job.active.is_(True),
-            JobPosting.status == "ACTIVE",
-        )
-
-        if company is not None:
-            statement = statement.where(
-                Job.company_id == company.id,
-            )
-
-        if work_mode is not None:
-            statement = statement.where(
-                JobPosting.work_mode == work_mode,
-            )
-
-        if location:
-            statement = statement.where(
-                JobPosting.location.ilike(f"%{location}%"),
-            )
-
-        if posted_after:
-            statement = statement.where(
-                JobPosting.posted_date >= posted_after,
-            )
-
-        if has_salary is not None:
-            if has_salary:
                 statement = statement.where(
-                    JobPosting.salary.isnot(None),
+                    JobPosting.title.ilike(pattern)
+                    | JobPosting.description.ilike(pattern)
                 )
-            else:
-                statement = statement.where(
-                    JobPosting.salary.is_(None),
-                )
-
-        if employment_type is not None:
-            statement = statement.where(
-                Job.employment_type == employment_type,
-            )
-
-        if experience_level is not None:
-            statement = statement.where(
-                Job.experience_level == experience_level,
-            )
-
-        if keyword:
-            pattern = f"%{keyword}%"
-
-            statement = statement.where(
-                JobPosting.title.ilike(pattern)
-                | JobPosting.description.ilike(pattern)
-            )
 
         if exclude_applied:
             statement = statement.where(

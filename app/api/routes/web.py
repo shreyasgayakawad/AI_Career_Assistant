@@ -17,6 +17,9 @@ from app.auth.jwt import decode_access_token
 from app.config.settings import AUTH_COOKIE_NAME, GOOGLE_ENABLED
 from app.models.job_posting import JobPosting
 from app.models.user import User
+from app.services.answer_bank_service import (
+    AnswerBankService,
+)
 from app.services.application_service import ApplicationService
 from app.services.candidate_profile_service import (
     CandidateProfileService,
@@ -648,6 +651,51 @@ def dashboard_profile_page(
 
     education_html = "".join(edu_items)
 
+    # --- Answer bank management (Phase 8) -------------------------------
+    # Saved answers are managed here on the profile page and consumed
+    # read-only by the Apply Kit on each job-detail page. All user-
+    # controlled text is escaped before entering the HTML.
+    answer_bank_service = AnswerBankService(session)
+
+    answer_entries = answer_bank_service.list_answers(
+        current_user.id,
+    )
+
+    answer_items: list[str] = []
+
+    for answer_entry in answer_entries:
+        answer_items.append(
+            f"""
+            <div style="background: #f1f3f5; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
+              <strong>{escape(answer_entry.question_text)}</strong><br/>
+              {escape(answer_entry.answer_text)}
+              <form
+                method="post"
+                action="/dashboard/profile/answers/{answer_entry.id}/delete"
+                style="display: inline;">
+                <button
+                  type="submit"
+                  style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 12px; margin-left: 8px;">
+                  &times;
+                </button>
+              </form>
+            </div>
+            """
+        )
+
+    if not answer_items:
+        answer_items.append(
+            """
+            <p style="color: #596579; margin: 0 0 8px;">
+              No saved answers yet. Add common questions and your
+              reusable answers below so they are ready to copy when
+              applying.
+            </p>
+            """
+        )
+
+    answers_html = "".join(answer_items)
+
     return HTMLResponse(
         content=f"""
         <!doctype html>
@@ -993,6 +1041,43 @@ def dashboard_profile_page(
                 </div>
               </form>
             </section>
+
+            <section>
+              <h2>Saved Answers</h2>
+
+              <p class="profile-meta">
+                Reusable answers for questions external application
+                forms commonly ask. Managed here; copied into forms
+                from each job's Apply Kit.
+              </p>
+
+              <div class="answers-list">
+                {answers_html}
+              </div>
+
+              <form
+                method="post"
+                action="/dashboard/profile/answers/add"
+                style="margin-top: 12px;"
+              >
+                <input
+                  type="text"
+                  name="question_text"
+                  placeholder="Question (e.g. Why do you want to work here?)"
+                  required
+                  style="width: 100%; margin-bottom: 8px;"
+                />
+                <textarea
+                  name="answer_text"
+                  placeholder="Your reusable answer"
+                  required
+                  style="width: 100%; min-height: 80px;"
+                ></textarea>
+                <button type="submit" style="margin-top: 8px;">
+                  Add Answer
+                </button>
+              </form>
+            </section>
           </main>
         </body>
         </html>
@@ -1239,6 +1324,68 @@ def remove_education_via_dashboard(
     service.remove_education(
         user_id=current_user.id,
         education_id=edu_id,
+    )
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
+    )
+
+
+@router.post(
+    "/dashboard/profile/answers/add",
+)
+def add_answer_via_dashboard(
+    question_text: str | None = Form(default=None),
+    answer_text: str | None = Form(default=None),
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Add a saved answer to the user's answer bank via the dashboard.
+    """
+
+    cleaned_question = (
+        question_text.strip() if question_text else None
+    )
+    cleaned_answer = answer_text.strip() if answer_text else None
+
+    if cleaned_question and cleaned_answer:
+        service = AnswerBankService(session)
+
+        try:
+            service.add_answer(
+                user_id=current_user.id,
+                question_text=cleaned_question,
+                answer_text=cleaned_answer,
+            )
+        except ValueError:
+            pass
+
+    return RedirectResponse(
+        url="/dashboard/profile",
+        status_code=303,
+    )
+
+
+@router.post(
+    "/dashboard/profile/answers/{answer_id}/delete",
+)
+def remove_answer_via_dashboard(
+    answer_id: int,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RedirectResponse:
+    """
+    Remove a saved answer from the user's answer bank via the
+    dashboard.
+    """
+
+    service = AnswerBankService(session)
+
+    service.remove_answer(
+        user_id=current_user.id,
+        entry_id=answer_id,
     )
 
     return RedirectResponse(
@@ -1495,6 +1642,141 @@ def dashboard_job_detail_page(
     """
     # ----------------------------------------------------------------------
 
+    # --- Apply Kit integration (Phase 8) ---------------------------------
+    # One screen that hands the user everything an external application
+    # form will ask for, so submitting takes minutes at $0. Applying
+    # itself always happens on the employer's own site -- nothing here
+    # auto-fills external forms. All user-controlled text is escaped
+    # before it enters the HTML; the copy buttons carry no text data
+    # at all (they reference textarea ids), so no stored value ever
+    # reaches the inline script.
+    answer_bank_service = AnswerBankService(session)
+
+    saved_answers = answer_bank_service.list_answers(
+        current_user.id,
+    )
+
+    candidate_skills_line = ", ".join(
+        skill.name
+        for skill in (candidate_profile.skills_list or [])
+    )
+
+    kit_field_specs: list[tuple[str, str, str | None, str]] = [
+        (
+            "kit-name",
+            "Full name",
+            current_user.name or None,
+            "Not set yet -- add your name on your Candidate Profile.",
+        ),
+        (
+            "kit-email",
+            "Email",
+            current_user.email or None,
+            "Not set yet -- add your email on your Candidate Profile.",
+        ),
+        (
+            "kit-phone",
+            "Phone",
+            candidate_profile.phone,
+            "Not set yet -- add Phone on your Candidate Profile.",
+        ),
+        (
+            "kit-location",
+            "Location",
+            candidate_profile.location,
+            "Not set yet -- add Location on your Candidate Profile.",
+        ),
+        (
+            "kit-skills",
+            "Skills line (comma-separated)",
+            candidate_skills_line or None,
+            "No skills tracked yet -- add some on your Candidate Profile.",
+        ),
+    ]
+
+    kit_field_parts: list[str] = []
+
+    for field_id, field_label, field_value, empty_message in kit_field_specs:
+        if field_value is None:
+            kit_field_parts.append(
+                f"""
+                <div class="kit-field">
+                  <span class="kit-label">{escape(field_label)}</span>
+
+                  <p class="kit-empty">
+                    {escape(empty_message)}
+                  </p>
+                </div>
+                """
+            )
+            continue
+
+        kit_field_parts.append(
+            f"""
+            <div class="kit-field">
+              <label class="kit-label" for="{field_id}">
+                {escape(field_label)}
+              </label>
+
+              <textarea
+                class="copy-textarea"
+                id="{field_id}"
+                rows="2"
+                readonly
+              >{escape(field_value)}</textarea>
+
+              <button
+                type="button"
+                class="button secondary copy-button"
+                data-copy-target="{field_id}"
+              >
+                Copy
+              </button>
+            </div>
+            """
+        )
+
+    apply_kit_fields_html = "".join(kit_field_parts)
+
+    if saved_answers:
+        answer_row_parts: list[str] = []
+
+        for saved_answer in saved_answers:
+            answer_row_parts.append(
+                f"""
+                <div class="kit-field">
+                  <span class="kit-label">{escape(saved_answer.question_text)}</span>
+
+                  <textarea
+                    class="copy-textarea"
+                    id="kit-answer-{saved_answer.id}"
+                    rows="3"
+                    readonly
+                  >{escape(saved_answer.answer_text)}</textarea>
+
+                  <button
+                    type="button"
+                    class="button secondary copy-button"
+                    data-copy-target="kit-answer-{saved_answer.id}"
+                  >
+                    Copy
+                  </button>
+                </div>
+                """
+            )
+
+        apply_kit_answers_html = "".join(answer_row_parts)
+    else:
+        apply_kit_answers_html = """
+        <p class="kit-empty">
+          No saved answers yet. Add reusable answers for common
+          application questions on your
+          <a href="/dashboard/profile">Candidate Profile</a> and they
+          will appear here.
+        </p>
+        """
+    # ----------------------------------------------------------------------
+
     description = (
         escape(job_posting.description)
         if job_posting.description
@@ -1677,6 +1959,68 @@ def dashboard_job_detail_page(
               font-weight: 700;
               margin: 14px 0 0;
             }}
+
+            .apply-kit {{
+              background: #f6f8fb;
+              border-radius: 12px;
+              margin-bottom: 24px;
+              padding: 16px 20px;
+            }}
+
+            .apply-kit h2 {{
+              font-size: 20px;
+              margin: 0 0 10px;
+            }}
+
+            .apply-kit h3 {{
+              font-size: 16px;
+              margin: 18px 0 8px;
+            }}
+
+            .kit-note {{
+              color: #596579;
+              font-size: 13px;
+              line-height: 1.5;
+              margin: 0 0 14px;
+            }}
+
+            .kit-field {{
+              background: white;
+              border-radius: 8px;
+              margin-bottom: 10px;
+              padding: 12px;
+            }}
+
+            .kit-label {{
+              display: block;
+              font-size: 13px;
+              font-weight: 700;
+              margin-bottom: 6px;
+            }}
+
+            .kit-empty {{
+              color: #596579;
+              font-size: 13px;
+              margin: 0;
+            }}
+
+            .copy-textarea {{
+              border: 1px solid #d5dbe3;
+              border-radius: 8px;
+              box-sizing: border-box;
+              font-family: inherit;
+              font-size: 14px;
+              line-height: 1.5;
+              margin-bottom: 8px;
+              padding: 10px;
+              resize: vertical;
+              width: 100%;
+            }}
+
+            .copy-button {{
+              font-size: 13px;
+              padding: 8px 14px;
+            }}
           </style>
         </head>
 
@@ -1696,6 +2040,38 @@ def dashboard_job_detail_page(
 
               {cover_letter_html}
 
+              <section class="apply-kit">
+                <h2>Apply Kit</h2>
+
+                <p class="kit-note">
+                  Everything an external application form will ask
+                  for, ready to copy field by field. You submit on
+                  the employer's own site -- this assistant never
+                  fills or submits forms for you.
+                </p>
+
+                <div class="actions">
+                  <a
+                    class="button"
+                    href="{posting_url}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Job Posting
+                  </a>
+
+                  {application_control}
+                </div>
+
+                <h3>Contact details</h3>
+
+                {apply_kit_fields_html}
+
+                <h3>Saved answers</h3>
+
+                {apply_kit_answers_html}
+              </section>
+
               <section>
                 <h2>Job Description</h2>
 
@@ -1705,18 +2081,7 @@ def dashboard_job_detail_page(
               </section>
 
               <div class="actions">
-                
-                  class="button"
-                  href="{posting_url}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Open Job Posting
-                </a>
-
-                {application_control}
-
-                
+                <a
                   class="button secondary"
                   href="/dashboard"
                 >
@@ -1725,6 +2090,48 @@ def dashboard_job_detail_page(
               </div>
             </article>
           </main>
+
+          <script>
+            (function () {{
+              var buttons = document.querySelectorAll(".copy-button");
+
+              function fallbackCopy(target) {{
+                target.focus();
+                target.select();
+                try {{
+                  document.execCommand("copy");
+                }} catch (err) {{
+                  // Leave the text selected so the user can copy manually.
+                }}
+              }}
+
+              Array.prototype.forEach.call(buttons, function (button) {{
+                button.addEventListener("click", function () {{
+                  var target = document.getElementById(
+                    button.getAttribute("data-copy-target")
+                  );
+
+                  if (!target) {{
+                    return;
+                  }}
+
+                  if (
+                    navigator.clipboard &&
+                    navigator.clipboard.writeText
+                  ) {{
+                    navigator.clipboard.writeText(target.value).then(
+                      undefined,
+                      function () {{
+                        fallbackCopy(target);
+                      }}
+                    );
+                  }} else {{
+                    fallbackCopy(target);
+                  }}
+                }});
+              }});
+            }})();
+          </script>
         </body>
         </html>
         """,

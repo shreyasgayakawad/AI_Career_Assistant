@@ -34,6 +34,14 @@ def main() -> None:
     connection: PortalConnection | None = None
     state_value: str | None = None
 
+    # Clean up any existing test user from previous runs
+    existing_user = (
+        session.query(User).filter(User.email == "google_callback_test@example.com").first()
+    )
+    if existing_user is not None:
+        session.delete(existing_user)
+        session.commit()
+
     try:
         user = User(
             name="Google Callback Test User",

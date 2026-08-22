@@ -5,6 +5,7 @@ API endpoints for tracking job applications.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
@@ -18,6 +19,12 @@ router = APIRouter(
     prefix="/applications",
     tags=["Applications"],
 )
+
+
+class ApplicationStatusUpdate(BaseModel):
+    """Request body for updating an application's status."""
+
+    status: str
 
 
 @router.post(
@@ -66,6 +73,48 @@ def mark_job_as_applied(
     }
 
 
+@router.patch(
+    "/{application_id}/status",
+)
+def update_application_status(
+    application_id: int,
+    status_in: ApplicationStatusUpdate,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, str]:
+    """
+    Update the status of a specific application.
+
+    Returns 404 if the application doesn't exist or doesn't belong
+    to the requesting user. Returns 400 if the requested status is
+    not a recognized value.
+    """
+
+    service = ApplicationService(session)
+
+    try:
+        application = service.update_status(
+            user_id=current_user.id,
+            application_id=application_id,
+            new_status=status_in.status,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    if application is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found or does not belong to you.",
+        )
+
+    return {
+        "status": application.status,
+    }
+
+
 @router.get(
     "/",
 )
@@ -89,6 +138,7 @@ def get_applications(
             "id": application.id,
             "job_posting_id": application.job_posting_id,
             "applied_at": application.applied_at,
+            "status": application.status,
         }
         for application in applications
     ]

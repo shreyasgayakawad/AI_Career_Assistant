@@ -96,6 +96,49 @@ class ApplicationService:
             application,
         )
 
+    def update_status(
+        self,
+        user_id: int,
+        application_id: int,
+        new_status: str,
+    ) -> Application | None:
+        """
+        Update the status of a specific application.
+
+        Looks the application up directly by its own primary key
+        (not by job_posting_id, which is a different field entirely)
+        and verifies it belongs to the requesting user.
+
+        Returns None if the application does not exist or does not
+        belong to the requesting user -- matching the None-return
+        convention already used by CandidateProfileService.remove_skill()
+        and similar ownership-checked methods.
+
+        Raises ValueError if new_status is not one of
+        Application.ALLOWED_STATUSES.
+        """
+
+        application = self.application_repository.get_by_id(
+            application_id,
+        )
+
+        if application is None or application.user_id != user_id:
+            return None
+
+        if new_status not in Application.ALLOWED_STATUSES:
+            raise ValueError(
+                f"Invalid status: {new_status}. "
+                "Allowed statuses: "
+                f"{', '.join(sorted(Application.ALLOWED_STATUSES))}"
+            )
+
+        application.status = new_status
+
+        self.application_repository.session.commit()
+        self.application_repository.session.refresh(application)
+
+        return application
+
     def get_all_applications(
         self,
         user_id: int,

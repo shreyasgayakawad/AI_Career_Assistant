@@ -6,7 +6,7 @@ Represents a user's application to a specific job posting.
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base_model import BaseModel
@@ -39,6 +39,20 @@ class Application(BaseModel):
         default=datetime.utcnow,
         nullable=False,
     )
+
+    status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="APPLIED",
+    )
+
+    ALLOWED_STATUSES = {
+        "APPLIED",
+        "INTERVIEW",
+        "OFFER",
+        "REJECTED",
+        "WITHDRAWN",
+    }
 
     user: Mapped["User"] = relationship(
         back_populates="applications",

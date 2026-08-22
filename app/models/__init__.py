@@ -4,6 +4,7 @@ Application Models
 Import all SQLAlchemy models so they are registered with the ORM.
 """
 
+from app.models.answer_bank_entry import AnswerBankEntry
 from app.models.application import Application
 from app.models.candidate_profile import CandidateProfile
 from app.models.candidate_education import CandidateEducation
@@ -19,6 +20,7 @@ from app.models.source import Source
 from app.models.user import User
 
 __all__ = [
+    "AnswerBankEntry",
     "Application",
     "CandidateProfile",
     "CandidateEducation",
